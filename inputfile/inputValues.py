@@ -222,7 +222,7 @@ if __name__ == "__main__":
         TeO2.compute_neighbour_wannier(tlrcut=tlrcut,
                                        compute_qnm_statistics=True, 
                                        chargeAnalysis=False, method='DDEC6', 
-                                       write_output=False, 
+                                       write_output=True, 
                                        print_output=False, 
                                        plot_wannier_dist=False,
                                        print_degeneracy=True)
@@ -306,10 +306,10 @@ if __name__ == "__main__":
     # non_bonding_oxygen = non_bonding_oxygen.split()
     # compute_all_distances(atom_name1=f'Te', atom_name2=f'Tl', minmax=True)
     # compute_coordination_number(atom1='Tl', atom2=non_bonding_oxygen, rcut=3.2)
-    get_frameID_with_constraint(rcut_12=1.0,rcut_23=2.2, rcut_13=1.0, rcut_11=3.0, rcut_22=1.0, rcut_33=2.2)
+    # get_frameID_with_constraint(rcut_12=1.0,rcut_23=2.2, rcut_13=1.0, rcut_11=3.0, rcut_22=1.0, rcut_33=2.2)
     # get_vmd_bonds('Te', 'O', rcut=2.5)
     # rdf(write=True)
     # bdf(write=True)
     # writetraj(cutoff=1.2)
-    #wannier_cation_host(write_dist_wannier=False, rcutoff_coordination=False, plot_wannier_cation_anion_angle=False, plot_histogram2D=False, plot_histogram_method='snsplot',  tlrcut=3.2)
+     wannier_cation_host(write_dist_wannier=False, rcutoff_coordination=False, plot_wannier_cation_anion_angle=False, plot_histogram2D=False, plot_histogram_method='snsplot',  tlrcut=3.2)
     # wannier_anion_host(write_dist_wannier=False, plot_histogram2D=False, plot_histogram_method='snsplot')

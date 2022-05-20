@@ -220,26 +220,26 @@ class WannierAnalysis(Trajectory):
                                             f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {Atom_ID_secondary_list} \t'+
                                             f'Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')        
             
-                Tl_coordination = compute_coordination(atom_1='Tl', atom_2=Atom_ID_Non_Bonding_Secondary, rcut=tlrcut, step=step)
-                Average_Tl_coordination += Tl_coordination
-                print(step, len(Atom_ID_Non_Bonding_Secondary))
-                Tl_coordination_stats.append(Tl_coordination)
+                #Tl_coordination = compute_coordination(atom_1='Tl', atom_2=Atom_ID_Non_Bonding_Secondary, rcut=tlrcut, step=step)
+                #Average_Tl_coordination += Tl_coordination
+                #print(step, len(Atom_ID_Non_Bonding_Secondary))
+                #Tl_coordination_stats.append(Tl_coordination)
 
 
 
-            Average_Tl_coordination = Average_Tl_coordination/self.n_steps
+            #Average_Tl_coordination = Average_Tl_coordination/self.n_steps
            
-            Tl_coordination_stats = 100*np.array(Tl_coordination_stats)/self.atom_list.count("Tl")
-            print('Mean = ', np.mean(Tl_coordination_stats, axis=0))
-            print('Std = ', np.std(Tl_coordination_stats, axis=0))
-            print()
-            f = open(Directory+'Tl-lfold-'+str(tlrcut)+'.dat', 'w')
-            total_percentage_Tl = 0
-            for i in range(len(Average_Tl_coordination)):
-                print(f'lfold: {i}, count: {Average_Tl_coordination[i]}, percentage: {100*Average_Tl_coordination[i]/self.atom_list.count("Tl")}', file=f)
-                total_percentage_Tl = total_percentage_Tl + 100*Average_Tl_coordination[i]/self.atom_list.count("Tl")
-            print(f'\nTotal Tl is {self.atom_list.count("Tl")} and counted is {total_percentage_Tl} %', file=f)
-            f.close()
+            #Tl_coordination_stats = 100*np.array(Tl_coordination_stats)/self.atom_list.count("Tl")
+            #print('Mean = ', np.mean(Tl_coordination_stats, axis=0))
+            #print('Std = ', np.std(Tl_coordination_stats, axis=0))
+            #print()
+            #f = open(Directory+'Tl-lfold-'+str(tlrcut)+'.dat', 'w')
+            #total_percentage_Tl = 0
+            #for i in range(len(Average_Tl_coordination)):
+            #    print(f'lfold: {i}, count: {Average_Tl_coordination[i]}, percentage: {100*Average_Tl_coordination[i]/self.atom_list.count("Tl")}', file=f)
+            #    total_percentage_Tl = total_percentage_Tl + 100*Average_Tl_coordination[i]/self.atom_list.count("Tl")
+            #print(f'\nTotal Tl is {self.atom_list.count("Tl")} and counted is {total_percentage_Tl} %', file=f)
+            #f.close()
 
             if compute_qnm_statistics:
                 print()
