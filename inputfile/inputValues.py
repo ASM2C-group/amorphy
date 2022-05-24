@@ -1,6 +1,6 @@
 import os, sys, ast
 import numpy as np
-sys.path.append("/home/raghvp01/MD-traj-analysis-code/StructureAnalysis/")
+sys.path.append("/home/raghvender/Gits/Structure_Analysis/")
 import time, logo
 from basis_reduction import minkowski_reduce
 from geometric_properties import (
@@ -22,27 +22,8 @@ __numba.version__ = '0.55.1'
 #                    [ 0.0000000000,        11.0780000687,         0.0000000000],
 #                    [ 0.0000000000,         0.0000000000,        15.7139997482]])
 
-# Tl2Te3O7
-#Lattice=np.array([[ 13.6780004501,         0.0000000000,         0.0000000000],
-#                  [ -5.7719869934,        13.6975425414,         0.0000000000],
-#                  [ -3.2214491920,        -1.7331681240,         9.2208890499]])
 
-# Tl2Te2O5
-#Lattice = np.array([[14.2379999161,         0.0000000000,         0.0000000000],
-#                    [ 0.0000000000,        12.1379995346,         0.0000000000],
-#                    [-6.9401691375,         0.0000000000,        15.3850884008]])
-
-
-#print(A, B, C, ALPHA, BETA, GAMMA)
-#sys.exit()
-
-
-#A, B, C =  16.23892446618999,  16.23892446618999,  16.2389244661899 # x = 0.0
-#A, B, C = 19.5662, 19.5662, 19.5662   # x =0.1
-#A, B, C = 19.47335141773691, 19.47335141773691, 19.47335141773691 # x =0.2
-#A, B, C = 19.38359280464976, 19.38359280464976, 19.38359280464976 # x = 0.3
-#A, B, C = 20.069383346824402, 20.069383346824402, 20.069383346824402 # x =0.4
-A, B, C = 19.9961464967, 19.9961464967, 19.9961464967 # x = 0.5
+A, B, C =  16.23892446618999,  16.23892446618999,  16.2389244661899 # x = 0.0
 ALPHA, BETA, GAMMA = 90.0, 90.0, 90.0
 
 LatticeMatrix = cellParameter_to_cellMatrix([A,B,C,ALPHA,BETA,GAMMA])
@@ -57,11 +38,11 @@ minkowski_reduce_cell = minkowski_reduce(LatticeMatrix)
 Directory = os.getcwd()
 if Directory[-1] != '/': Directory = Directory + '/'
 fileCharge = os.path.join(Directory + 'DDEC6_even_tempered_net_atomic_charges.xyz')
-fileTraj = os.path.join(Directory + 'SiO2-pos-1.xyz')
+fileTraj = os.path.join(Directory + 'snap_centers.xyz')
 ##############################################
 
 atom_name_1 = 'Te'  # Host atom symbol
-atom_name_2 = 'Tl'   # Wannier center symbol
+atom_name_2 = 'X'   # Wannier center symbol
 atom_name_3 = 'O'   # Secondary atatom_name_1
 
 ##############################################
@@ -75,8 +56,8 @@ RESOLUTION = 500
 #--------------------------------------------#
 rcut_Tl_O = 2.8
 rcut_Te_O = 2.5
-rcut_HostAtom_Wannier = 1.0
-rcut_HostAtom_SecondaryAtom = 2.5
+rcut_HostAtom_Wannier = 0.7
+rcut_HostAtom_SecondaryAtom = 2.46
 rcut_tolerance_distance_selection = 0.05
 AnlgeCut_HostWannier_Host_SecondaryAtom = 73  # degrees
 
@@ -203,8 +184,7 @@ if __name__ == "__main__":
         tok = time.perf_counter()
         print(f'\nTime elapsed : {tok-tik} seconds  ({(tok-tik)/60}) minutes.')
 
-    def wannier_cation_host(tlrcut,
-                            write_dist_wannier=False, 
+    def wannier_cation_host(write_dist_wannier=False, 
                             plot_histogram2D=False, 
                             plot_histogram_method='matplotlib', 
                             rcutoff_coordination=False,
@@ -219,13 +199,12 @@ if __name__ == "__main__":
         tik = time.perf_counter()
         TeO2 = WannierAnalysis()
         average_coordination, max_dist, angle, wannier_dist_ener = \
-        TeO2.compute_neighbour_wannier(tlrcut=tlrcut,
-                                       compute_qnm_statistics=True, 
+        TeO2.compute_neighbour_wannier(compute_qnm_statistics=False, 
                                        chargeAnalysis=False, method='DDEC6', 
                                        write_output=True, 
                                        print_output=False, 
                                        plot_wannier_dist=False,
-                                       print_degeneracy=True)
+                                       print_degeneracy=False)
 
         if plot_wannier_cation_anion_angle:
             plt.figure(figsize=[25,15])
@@ -311,5 +290,5 @@ if __name__ == "__main__":
     # rdf(write=True)
     # bdf(write=True)
     # writetraj(cutoff=1.2)
-     wannier_cation_host(write_dist_wannier=False, rcutoff_coordination=False, plot_wannier_cation_anion_angle=False, plot_histogram2D=False, plot_histogram_method='snsplot',  tlrcut=3.2)
+    wannier_cation_host(write_dist_wannier=False, rcutoff_coordination=False, plot_wannier_cation_anion_angle=False, plot_histogram2D=False, plot_histogram_method='snsplot')
     # wannier_anion_host(write_dist_wannier=False, plot_histogram2D=False, plot_histogram_method='snsplot')

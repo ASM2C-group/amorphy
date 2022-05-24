@@ -62,7 +62,7 @@ class WannierAnalysis(Trajectory):
 
         return 0 # Isolated oxygen atom (couldn't find any other cation)
 
-    def compute_neighbour_wannier(self, tlrcut, filename="", compute_qnm_statistics=False, 
+    def compute_neighbour_wannier(self, filename="", compute_qnm_statistics=False, 
                                     chargeAnalysis=False, method='DDEC6',write_output=False, 
                                     print_output=False, plot_wannier_dist=False,
                                     print_degeneracy=False):
@@ -186,12 +186,12 @@ class WannierAnalysis(Trajectory):
                                                             count_number_of_secondary_bonding_atoms += flag_bonding_secondary_atom
                                                             
                                                             ## TEST BLOCK ##
-                                                            if flag_bonding_secondary_atom == 0:
-                                                                Atom_ID_Non_Bonding_Secondary.append(Atom_ID_secondary)
-                                                                print(f'Nbonding {Atom_ID}  {Atom_ID_secondary} {dist_12}')
-                                                            else:
-                                                                Atom_ID_Bonding_Secondary.append(Atom_ID_secondary)
-                                                                #print(f'Bonding {Atom_ID}  {Atom_ID_secondary}  {dist_12}')
+                                                            #if flag_bonding_secondary_atom == 0:
+                                                            #    Atom_ID_Non_Bonding_Secondary.append(Atom_ID_secondary)
+                                                            #    print(f'Nbonding {Atom_ID}  {Atom_ID_secondary} {dist_12}')
+                                                            #else:
+                                                            #    Atom_ID_Bonding_Secondary.append(Atom_ID_secondary)
+                                                            #    #print(f'Bonding {Atom_ID}  {Atom_ID_secondary}  {dist_12}')
                 
 
                         Host_atom_coordination[count_number_of_secondary_atoms] += 1
