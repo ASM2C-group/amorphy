@@ -123,7 +123,9 @@ def compute_coordination(atom_1, atom_2, rcut, step=0):
     
     coordinates = atom_Data.coordinates[step]
 
-    n_coordination = np.zeros(12) # I assume no atom has more than 12 bonds.
+    l_fold = np.zeros(12) # I assume no atom has more than 12 bonds.
+
+    count_of_atom1 = 0
 
     if isinstance(atom_2, list):
         atom_2 = np.array(atom_2, dtype=np.int_)
@@ -131,6 +133,7 @@ def compute_coordination(atom_1, atom_2, rcut, step=0):
             
              if value[0] == atom_1:
                 coord_atom_1 = np.array(value[1:], dtype=np.float_)
+                count_of_atom1 += 1
 
                 coordination = 0
                 for atom_ID_second, value2 in enumerate(coordinates):
@@ -143,13 +146,14 @@ def compute_coordination(atom_1, atom_2, rcut, step=0):
                         if distance < rcut:
                             coordination += 1
 
-                n_coordination[coordination] += 1 
+                l_fold[coordination] += 1 
 
     elif isinstance(atom_2, str):
         for atom_ID, value in enumerate(coordinates):
             
             if value[0] == atom_1:
                 coord_atom_1 = np.array(value[1:], dtype=np.float_)
+                count_of_atom1 += 1
 
                 coordination = 0
                 for atom_ID_second, value2 in enumerate(coordinates):
@@ -162,16 +166,24 @@ def compute_coordination(atom_1, atom_2, rcut, step=0):
                         if distance < rcut:
                             coordination += 1
  
-                n_coordination[coordination] += 1 
+                l_fold[coordination] += 1 
 
     else:
         raise TypeError(f'Type of atom_2: ({atom_2}) is not compatible with the funciton.')
 
-    return n_coordination
+    
+    n_coordination = 0
+    for fold, value in enumerate(l_fold):
+        n_coordination += fold * value  
+
+    n_coordination = n_coordination / count_of_atom1
+
+    return l_fold, n_coordination
 
 def compute_all_distances(atom_name_1,
                           atom_name_2,
-                          minmax_stats=False):
+                          minmax_stats=False,
+                          step_Constrained=False):
 
     ''' This function computes the distances between all the atom 1 and among all 
         the atoms of type 2.
@@ -207,6 +219,9 @@ def compute_all_distances(atom_name_1,
             #progressBar = "\rProgress: " + ProgressBar(atom_Data.n_steps -1 , step, 100)
             #ShowBar(progressBar)
             
+            if isinstance(step_Constrained, int) and step_Constrained != step:
+                continue
+
             if len(atom_name_1) == 2:
                  
                 for atom_ID, value in enumerate(atom_Data.coordinates[step]):

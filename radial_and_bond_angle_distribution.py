@@ -99,6 +99,53 @@ class PDF(Trajectory):
             # and later divided by volume of shell at given index.
             self.g_of_r[i] = value * self.compute_volume_per_atom / volumes[i]
 
+    def radial_distribution_histogram(self, atom_name_1, atom_name_2, binwidth):
+        '''
+           This function evaluates the histogram of radial distances between pair of atoms.
+           Generally, this function becomes useful in the case of calculating atom-wannier 
+           distance distributions in order to evaluate the cutoff for defining coordinaton 
+           number.
+
+           Parameters:
+           ------------------------------------------------------------------------------
+           atom_name_1 : Atom name symbol of atom 1
+           atom_name_2 : Atom name symbol of atom 2
+           binwidth    : Width of bin for histogram
+
+           Return:
+           ------------------------------------------------------------------------------
+        '''
+        Distances = []
+
+        for step in tqdm(range(self.n_steps)):
+            
+            for atomID_1, value_1 in enumerate(self.coordinates[step]):
+                 if atom_name_1 == value_1[0]:
+                     coord_1 = np.array(value_1[1:], dtype=np.float_)
+
+                     for atomID_2, value_2 in enumerate(self.coordinates[step]):
+                         if atom_name_2 == value_2[0]:
+                             coord_2 = np.array(value_2[1:], dtype=np.float_)
+                             
+                             _, dist = displacement(coord_1, coord_2)
+                             Distances.append(float(dist))
+        
+
+        xmin = min(Distances)
+        xmax = max(Distances)
+        bins = int((xmax-xmin)/binwidth)
+
+        y, edges = np.histogram(Distances, bins=bins)
+        centers = 0.5*(edges[1:] + edges[:-1])
+
+        y = y/np.max(y)
+
+        for i in range(len(y)):
+            print(centers[i], y[i])
+
+
+    #################################################################################################################
+
     def compute_bond_angle_distribution(self):
         
         self.angle = np.linspace(0.0, 180, 180, dtype=int)
