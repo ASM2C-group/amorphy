@@ -81,6 +81,10 @@ class WannierAnalysis(Trajectory):
             Average_Tl_coordination = np.zeros(12)
             Tl_coordination_stats = []
             
+            if print_BO_NBO:
+                BO = open('BO.dat', 'w')
+                NBO = open('NBO.dat', 'w')
+
             # For reading charge analysis file
             if chargeAnalysis:
                 try:
@@ -191,11 +195,11 @@ class WannierAnalysis(Trajectory):
                                                             if flag_bonding_secondary_atom == 0:
                                                                 Atom_ID_Non_Bonding_Secondary.append(Atom_ID_secondary)
                                                                 if print_BO_NBO:
-                                                                    print(f'Step: {step}  Host-AtomID: {Atom_ID}   NBO-ID:{Atom_ID_secondary} Distance: {dist_12} \n', file='NBO.dat' )
+                                                                    NBO.write(f'Step: {step}  Host-AtomID: {Atom_ID}   NBO-ID: {Atom_ID_secondary} Distance: {dist_12} \n')
                                                             else:
                                                                 Atom_ID_Bonding_Secondary.append(Atom_ID_secondary)
                                                                 if print_BO_NBO:
-                                                                    print(f'Step: {step} Host-AtomID: {Atom_ID}  BO-ID:{Atom_ID_secondary}  Distance: {dist_12} \n', file='BO.dat')
+                                                                    BO.write(f'Step: {step} Host-AtomID: {Atom_ID}  BO-ID: {Atom_ID_secondary}  Distance: {dist_12} \n')
                 
 
                         Host_atom_coordination[count_number_of_secondary_atoms] += 1
