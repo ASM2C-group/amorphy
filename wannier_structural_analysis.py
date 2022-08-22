@@ -192,11 +192,11 @@ class WannierAnalysis(Trajectory):
                                                             if flag_bonding_secondary_atom == 0:
                                                                 Atom_ID_Non_Bonding_Secondary.append(Atom_ID_secondary)
                                                                 if print_BO_NBO:
-                                                                    print(f'Step: {step}  Nonbonding: {Atom_ID}  {Atom_ID_secondary} {dist_12}')
+                                                                    print(f'Step: {step}  Nonbonding: {Atom_ID}  {Atom_ID_secondary} {dist_12} \n', file='NBO.dat' )
                                                             else:
                                                                 Atom_ID_Bonding_Secondary.append(Atom_ID_secondary)
                                                                 if print_BO_NBO:
-                                                                    print(f'Step: {step} Bonding {Atom_ID}  {Atom_ID_secondary}  {dist_12}')
+                                                                    print(f'Step: {step} Bonding {Atom_ID}  {Atom_ID_secondary}  {dist_12} \n', file='BO.dat')
                 
 
                         Host_atom_coordination[count_number_of_secondary_atoms] += 1
