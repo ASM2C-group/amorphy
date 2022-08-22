@@ -188,15 +188,14 @@ class WannierAnalysis(Trajectory):
                                                             flag_bonding_secondary_atom = self.compute_qnm(step, coord_atom1, coord_atom2)
                                                             count_number_of_secondary_bonding_atoms += flag_bonding_secondary_atom
                                                             
-                                                            # TEST BLOCK ##
                                                             if flag_bonding_secondary_atom == 0:
                                                                 Atom_ID_Non_Bonding_Secondary.append(Atom_ID_secondary)
                                                                 if print_BO_NBO:
-                                                                    print(f'Step: {step}  Nonbonding: {Atom_ID}  {Atom_ID_secondary} {dist_12} \n', file='NBO.dat' )
+                                                                    print(f'Step: {step}  Host-AtomID: {Atom_ID}   NBO-ID:{Atom_ID_secondary} Distance: {dist_12} \n', file='NBO.dat' )
                                                             else:
                                                                 Atom_ID_Bonding_Secondary.append(Atom_ID_secondary)
                                                                 if print_BO_NBO:
-                                                                    print(f'Step: {step} Bonding {Atom_ID}  {Atom_ID_secondary}  {dist_12} \n', file='BO.dat')
+                                                                    print(f'Step: {step} Host-AtomID: {Atom_ID}  BO-ID:{Atom_ID_secondary}  Distance: {dist_12} \n', file='BO.dat')
                 
 
                         Host_atom_coordination[count_number_of_secondary_atoms] += 1
@@ -417,10 +416,10 @@ class WannierAnalysis(Trajectory):
                             # distance between host(primary) atom and secondary cation atom
                             _, dist_12 = displacement(coord_atom2, coord_atom1)
                             
-                            if atom2[0] == 'Tl':
-                                rcut_HostAtom_SecondaryAtom = rcut_Tl_O
-                            elif atom2[0] == 'Te':
-                                rcut_HostAtom_SecondaryAtom = rcut_Te_O
+                            #if atom2[0] == 'Tl':
+                            #    rcut_HostAtom_SecondaryAtom = rcut_Tl_O
+                            #elif atom2[0] == 'Te':
+                            #    rcut_HostAtom_SecondaryAtom = rcut_Te_O
                             
                             if dist_12 < rcut_HostAtom_SecondaryAtom : # cutoff for cation-anion
                             
@@ -440,7 +439,7 @@ class WannierAnalysis(Trajectory):
                                         if distance_selection < rcut_tolerance_distance_selection and dist_1W < dist_2W:
                                                                                         # Counting number of wannier centers near cation atom in cut-off radius
                                             
-                                            dist_2W_near_cation, coord_wannier_near_cation, count_number_of_wanniers_near_cation = \
+                                            dist_2W_near_cation, coord_wannier_near_cation, count_number_of_wanniers_near_cation, Wannier_Distance_Energy = \
                                                   self.get_farthest_atom(atom_name_search=atom_name_2, coord_ref=coord_atom2,
                                                                     rcut=rcut_HostAtom_Wannier, step=step, Atom_ID=Atom_ID,
                                                                     print_degeneracy=print_degeneracy)

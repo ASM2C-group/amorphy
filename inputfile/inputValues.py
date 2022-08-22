@@ -1,6 +1,10 @@
 import os, sys, ast
 import numpy as np
+<<<<<<< HEAD
 sys.path.append("/home/raghvp01/MD-traj-analysis-code/Structure_Analysis")
+=======
+sys.path.append("/home/raghvender/Gits/Structure_Analysis/")
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
 import time, logo
 from basis_reduction import minkowski_reduce
 from geometric_properties import (
@@ -17,8 +21,18 @@ __numba.version__ = '0.55.1'
 
 ######################################################################################
 
+<<<<<<< HEAD
 #A, B, C = 19.9961464967, 19.9961464967, 19.9961464967 # x = 0.5
 
+=======
+# Tl2TeO3
+#Lattice = np.array([[16.6000003815,         0.0000000000,         0.0000000000],
+#                    [ 0.0000000000,        11.0780000687,         0.0000000000],
+#                    [ 0.0000000000,         0.0000000000,        15.7139997482]])
+
+
+A, B, C =  16.23892446618999,  16.23892446618999,  16.2389244661899 # x = 0.0
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
 ALPHA, BETA, GAMMA = 90.0, 90.0, 90.0
 
 LatticeMatrix = cellParameter_to_cellMatrix([A,B,C,ALPHA,BETA,GAMMA])
@@ -33,7 +47,11 @@ minkowski_reduce_cell = minkowski_reduce(LatticeMatrix)
 Directory = os.getcwd()
 if Directory[-1] != '/': Directory = Directory + '/'
 fileCharge = os.path.join(Directory + 'DDEC6_even_tempered_net_atomic_charges.xyz')
+<<<<<<< HEAD
 fileTraj = os.path.join(Directory + 'TeO2-HOMO_centers.xyz')
+=======
+fileTraj = os.path.join(Directory + 'snap_centers.xyz')
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
 ##############################################
 
 atom_name_1 = 'Te'  # Host atom symbol
@@ -49,12 +67,21 @@ RESOLUTION = 500
 #--------------------------------------------#
 #    Describing atomic cutoffs and name      #
 #--------------------------------------------#
+<<<<<<< HEAD
 rcut_Tl_O = 'XXX'
 rcut_Te_O = 'XXX'
 rcut_HostAtom_Wannier = 1.0
 rcut_HostAtom_SecondaryAtom = 2.46
 rcut_tolerance_distance_selection = 0.05
 AnlgeCut_HostWannier_Host_SecondaryAtom = 73.0
+=======
+rcut_Tl_O = 2.8
+rcut_Te_O = 2.5
+rcut_HostAtom_Wannier = 0.7
+rcut_HostAtom_SecondaryAtom = 2.46
+rcut_tolerance_distance_selection = 0.05
+AnlgeCut_HostWannier_Host_SecondaryAtom = 73  # degrees
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
 
 #--------------------------------------------#
 #   For Bond anlge distribution function     #
@@ -78,17 +105,27 @@ if __name__ == "__main__":
     sys.stdout.flush()                                                               
     #################################################################################
 
+<<<<<<< HEAD
     def rdf(Histogram, binwidth=0.005, write=False):
+=======
+    def rdf(write=False):
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
         from radial_and_bond_angle_distribution import PDF
         TeO2 = PDF()
         # Compute radial distribution function
         tik = time.perf_counter()
+<<<<<<< HEAD
         if Histogram == False:
             TeO2.compute_volume_per_atom()
             TeO2.compute_radial_distribution(r_cutoff=0.5*min(A,B,C))
             TeO2.bond_plot(write_data=write)
         else:
             TeO2.radial_distribution_histogram(atom_name_1, atom_name_2, binwidth=binwidth)
+=======
+        TeO2.compute_volume_per_atom()
+        TeO2.compute_radial_distribution(r_cutoff=0.5*min(A,B,C))
+        TeO2.bond_plot(write_data=write)
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
         tok = time.perf_counter()
         print(f'\nTime elapsed : {tok-tik} seconds  ({(tok-tik)/60}) minutes.')
 
@@ -122,7 +159,11 @@ if __name__ == "__main__":
         tok = time.perf_counter()
         print(f'\nTime elapsed : {tok-tik} seconds  ({(tok-tik)/60}) minutes.')
 
+<<<<<<< HEAD
     def compute_all_distances(atom_name1, atom_name2, minmax, step=False):
+=======
+    def compute_all_distances(atom_name1, atom_name2, minmax):
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
         from topology import compute_all_distances
         tik = time.perf_counter()
 
@@ -132,21 +173,33 @@ if __name__ == "__main__":
             atom1_description = atom1_description[0]
             atom2_description = atom2_description[0]
             compute_all_distances(atom_name_1=atom1_description, 
+<<<<<<< HEAD
             atom_name_2=atom2_description, minmax_stats=minmax, step_Constrained=step)
+=======
+            atom_name_2=atom2_description, minmax_stats=minmax)
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
 
         elif len(atom1_description) == 1 and len(atom2_description) == 2:
             atom2_description[1] = ast.literal_eval(atom2_description[1])
             assert isinstance(atom2_description[1], list)
             for index in atom2_description[1]:
                 compute_all_distances(atom_name_1=atom1_description[0], 
+<<<<<<< HEAD
                 atom_name_2=atom2_description[0]+f'@{index}', minmax_stats=minmax, step_Constrained=step)
+=======
+                atom_name_2=atom2_description[0]+f'@{index}', minmax_stats=minmax)
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
 
         elif len(atom1_description) == 2 and len(atom2_description) == 1:
             atom1_description[1] = ast.literal_eval(atom1_description[1])
             assert isinstance(atom1_description[1], list)
             for index in atom1_description[1]:
                 compute_all_distances(atom_name_1=atom1_description[0]+f'@{index}', 
+<<<<<<< HEAD
                 atom_name_2=atom2_description[0], minmax_stats=minmax, step_Constrained=step)
+=======
+                atom_name_2=atom2_description[0], minmax_stats=minmax)
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
 
 
         elif len(atom1_description) == 2 and len(atom2_description) == 2:
@@ -157,11 +210,16 @@ if __name__ == "__main__":
             for index in atom1_description[1]:
                 for index2 in atom2_description[1]:
                     compute_all_distances(atom_name_1=atom1_description[0]+f'@{index}', 
+<<<<<<< HEAD
                     atom_name_2=atom2_description[0]+f'@{index2}', minmax_stats=minmax, step_Constrained=step)
+=======
+                    atom_name_2=atom2_description[0]+f'@{index2}', minmax_stats=minmax)
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
         
         tok = time.perf_counter()
         print(f'\nTime elapsed : {tok-tik} seconds  ({(tok-tik)/60}) minutes.')
 
+<<<<<<< HEAD
     def compute_coordination_number(atom1, atom2, rcut, step=False):
         from topology import compute_coordination
 
@@ -174,6 +232,17 @@ if __name__ == "__main__":
         #print(f'\nTime elapsed : {tok-tik} seconds  ({(tok-tik)/60}) minutes.')
 
         return n_coordination
+=======
+    def compute_coordination_number(atom1, atom2, rcut):
+        from topology import compute_coordination
+
+        tik = time.perf_counter()
+        coordination = compute_coordination(atom_1=atom1, atom_2=atom2, rcut=rcut)
+        for i in coordination:
+            print('Constrained Frames  :', i)
+        tok = time.perf_counter()
+        print(f'\nTime elapsed : {tok-tik} seconds  ({(tok-tik)/60}) minutes.')
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
 
     def get_frameID_with_constraint(rcut_12, rcut_23, rcut_13, rcut_11, rcut_22, rcut_33):
         from topology import get_constrained_frameID
@@ -200,12 +269,21 @@ if __name__ == "__main__":
         tik = time.perf_counter()
         TeO2 = WannierAnalysis()
         average_coordination, max_dist, angle, wannier_dist_ener = \
+<<<<<<< HEAD
         TeO2.compute_neighbour_wannier(compute_qnm_statistics=False, print_BO_NBO=False, 
                                        chargeAnalysis=True, method='DDEC6', 
                                        write_output=True, 
                                        print_output=False, 
                                        plot_wannier_dist=False,
                                        print_degeneracy=True)
+=======
+        TeO2.compute_neighbour_wannier(compute_qnm_statistics=False, 
+                                       chargeAnalysis=False, method='DDEC6', 
+                                       write_output=True, 
+                                       print_output=False, 
+                                       plot_wannier_dist=False,
+                                       print_degeneracy=False)
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
 
         if plot_wannier_cation_anion_angle:
             plt.figure(figsize=[25,15])
@@ -238,8 +316,12 @@ if __name__ == "__main__":
         # To create data file with coordination and rcut values
         # This is suppose to use with bash script rcut_coordination.sh 
         if rcutoff_coordination:
+<<<<<<< HEAD
             #rcut_off = rcut_HostAtom_SecondaryAtom
             rcut_off = AnlgeCut_HostWannier_Host_SecondaryAtom
+=======
+            rcut_off = rcut_HostAtom_SecondaryAtom
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
             with open('rcut-coordination.dat', 'a') as fileOpen:
                 fileOpen.write(f'  {rcut_off}   {average_coordination}  \n ')
 
@@ -251,8 +333,13 @@ if __name__ == "__main__":
         from wannier_structural_analysis import WannierAnalysis
 
         # Computing Wannier with host atom as anion
+<<<<<<< HEAD
         if atom_name_1 != 'O' :
             raise NameError ('WARNING: Host atom is not Oxygen')
+=======
+        #if atom_name_1 != 'O' :
+        #    raise NameError ('WARNING: Host atom is not Oxygen')
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
 
         tik = time.perf_counter()
         TeO2 = WannierAnalysis()
@@ -284,6 +371,7 @@ if __name__ == "__main__":
         print(f'\nTime elapsed : {tok-tik} seconds  ({(tok-tik)/60}) minutes.')
      
 
+<<<<<<< HEAD
       
     # compute_all_distances(atom_name1=f'Tl', atom_name2=f'O@oxyg', minmax=True, step=stp)
 
@@ -302,6 +390,14 @@ if __name__ == "__main__":
     # get_frameID_with_constraint(rcut_12=1.0,rcut_23=2.2, rcut_13=1.0, rcut_11=3.0, rcut_22=1.0, rcut_33=2.2)
     # get_vmd_bonds('Te', 'O', rcut=2.5)
     # rdf(Histogram=True, binwidth=0.005, write=True)
+=======
+    # non_bonding_oxygen = non_bonding_oxygen.split()
+    # compute_all_distances(atom_name1=f'Te', atom_name2=f'Tl', minmax=True)
+    # compute_coordination_number(atom1='Tl', atom2=non_bonding_oxygen, rcut=3.2)
+    # get_frameID_with_constraint(rcut_12=1.0,rcut_23=2.2, rcut_13=1.0, rcut_11=3.0, rcut_22=1.0, rcut_33=2.2)
+    # get_vmd_bonds('Te', 'O', rcut=2.5)
+    # rdf(write=True)
+>>>>>>> 5a18cb5500b67489b3bb674753ce683d44dad1fb
     # bdf(write=True)
     # writetraj(cutoff=1.2)
     wannier_cation_host(write_dist_wannier=False, rcutoff_coordination=False, plot_wannier_cation_anion_angle=False, plot_histogram2D=False, plot_histogram_method='snsplot')
