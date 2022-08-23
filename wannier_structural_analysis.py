@@ -130,9 +130,9 @@ class WannierAnalysis(Trajectory):
                         #if atom_name_1 == 'Tl' and count_number_of_wanniers_near_host == 5 :
                         #    print('Tl less than 6 wannier encountered', Atom_ID)
                         #    continue
-                        #if atom_name_1 == 'Te' and count_number_of_wanniers_near_host != 1 :
-                        #    print('Te more than 1 wannier encountered')
-                        #    continue
+                        if atom_name_1 == 'Te' and count_number_of_wanniers_near_host != 1 :
+                            print('Te more than 1 wannier encountered')
+                            continue
                         
                         # Not evaluated directly because sometime I use constraint, so for
                         # correct normalisation I count for those follow the constraint
