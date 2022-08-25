@@ -233,7 +233,7 @@ class WannierAnalysis(Trajectory):
            
 
                 Host_atom_coordination_std.append(Host_atom_coordination_snap)
-
+            
             Host_atom_coordination_std = np.std(Host_atom_coordination_std, axis=0)
             
             if compute_qnm_statistics:
@@ -265,7 +265,8 @@ class WannierAnalysis(Trajectory):
             for n_fold, value in enumerate(Host_atom_coordination):
                 if value != 0 :
                     percentage = value/(count_number_of_host_atoms * self.n_steps) * 100
-                    print(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8}    {round(Host_atom_coordination_std[n_fold], 2):>8}')
+                    percentage_std = Host_atom_coordination_std[n_fold] * (100/count_number_of_host_atoms)
+                    print(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} %')
                     Total_Percentage_N_folds += percentage
                     Coordination_host_atom += n_fold * value 
             print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
@@ -315,7 +316,8 @@ class WannierAnalysis(Trajectory):
                 for n_fold, value in enumerate(Host_atom_coordination):
                     if value != 0 :
                         percentage = value/(count_number_of_host_atoms * self.n_steps) * 100
-                        fw.write(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8}    {round(Host_atom_coordination_std[n_fold], 2):>8} \n')
+                        percentage_std = Host_atom_coordination_std[n_fold] * (100/count_number_of_host_atoms)
+                        fw.write(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} % \n')
                         Total_Percentage_N_folds += percentage
                         Coordination_host_atom += n_fold * value 
                 fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n \n')
