@@ -13,8 +13,42 @@ def translate():
 def hydrogen_passivate():
     pass
 
-def ground_the_molecule():
+def ground_the_molecule(ID1, ID2, ID3):
+    ''' Ground the molecule in xy-plane (convention) annd put it
+        close to center in the xy plane.
+
+        Parameters:
+        --------------------------------------------------------
+        ID1 = ID of atom 1
+        ID2 = ID of atom 2 (Centered atom in xy-plane)
+        ID3 = ID of atom 3
+     
+        Return:
+        --------------------------------------------------------
+        coord = coodinates of grounded molecule
+
+    '''
+    #assert isinstance(ID1, int)
+    #assert isinstance(ID2, int)
+    #assert isinstance(ID3, int)
+
+    #atom_Data = Trajectory(filename=fileTraj)
+    #coordinates = atom_Data.coordinates
+
+    #for atom_ID, value in enumerate(coordinates[0]):
+    #   if atom_ID == ID2:
+    #       x2, y2, z2 = value[1:]
+    ##print(x2, y2, z2)
+    #coord = coordinates[0]
+    #print(coord)
+    #print()
+    #for atom_ID, value in enumerate(coordinates[0]):
+    #    #print(coord[atom_ID][0],"  "  , coord[atom_ID][1], "  " , coord[atom_ID][2],"  " , coord[atom_ID][3]-z2)
+    #    print(coord[atom_ID][1:]-[0,0,z2])
     pass
+        
+
+
 
 def get_constrained_frameID(atom_name_1, atom_name_2, atom_name_3, 
                           rcut_12=float(0), 

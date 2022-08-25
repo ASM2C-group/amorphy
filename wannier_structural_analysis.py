@@ -253,7 +253,7 @@ class WannierAnalysis(Trajectory):
                 print()
                 print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
                 print('----------------------------------------')
-                print('N_fold, Bonding anion, Count, Percentage')
+                print('N_fold, Bridging anion, Count, Percentage')
                 print('----------------------------------------')
                 total_percentage = 0
                 for i, row in enumerate(Host_atom_coordination_qnm):
@@ -304,7 +304,7 @@ class WannierAnalysis(Trajectory):
                 if compute_qnm_statistics:
                     # Writing data to a file
                     fw.write('\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n')
-                    fw.write(f'N_fold, Bonding anion, Count, Percentage \n')
+                    fw.write(f'N_fold, Bridging anion, Count, Percentage \n')
                     fw.write('----------------------------------------\n')
                     total_percentage = 0
                     for i, row in enumerate(Host_atom_coordination_qnm):
