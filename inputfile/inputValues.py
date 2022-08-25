@@ -202,7 +202,7 @@ if __name__ == "__main__":
         tik = time.perf_counter()
         TeO2 = WannierAnalysis()
         average_coordination, max_dist, angle, wannier_dist_ener = \
-        TeO2.compute_neighbour_wannier(compute_qnm_statistics=True, print_BO_NBO=True, 
+        TeO2.compute_neighbour_wannier(compute_qnm_statistics=False, print_BO_NBO=False, 
                                        chargeAnalysis=False, method='DDEC6', 
                                        write_output=True, 
                                        print_output=False, 
@@ -307,12 +307,12 @@ if __name__ == "__main__":
             for cut in tqdm.tqdm(np.arange(2.2,3.8,0.05)):
                 coord_BO = 0
                 for index, id_list in enumerate(BO_X):
-                    coordination = compute_coordination_number(atom1='Tl', atom2=id_list, rcut=cut, step=index)
+                    coordination = compute_coordination_number(atom1=atom_name_1, atom2=id_list, rcut=cut, step=index)
                     coord_BO += coordination
                 
                 coord_NBO = 0
                 for index, id_list in enumerate(NBO_X):
-                    coordination = compute_coordination_number(atom1='Tl', atom2=id_list, rcut=cut, step=index)
+                    coordination = compute_coordination_number(atom1=atom_name_1, atom2=id_list, rcut=cut, step=index)
                     coord_NBO += coordination
 
                 file_BO_NBO.write(f'{round(cut,2)}  {round(coord_BO/len(np.unique(BO_step)) , 4)}     {round( coord_NBO/len(np.unique(NBO_step)) , 4)} \n')
@@ -322,9 +322,9 @@ if __name__ == "__main__":
 
     # get_frameID_with_constraint(rcut_12=1.0,rcut_23=2.2, rcut_13=1.0, rcut_11=3.0, rcut_22=1.0, rcut_33=2.2)
     # compute_all_distances(atom_name1=f'Tl', atom_name2=f'O@oxyg', minmax=True, step=stp)
-    BO_NBO_Coordination(atom_name_1='Tl')
+    # BO_NBO_Coordination(atom_name_1='Tl')
     # rdf(Histogram=True, binwidth=0.005, write=True)
     # bdf(write=True)
     # writetraj(cutoff=1.2)
-    # wannier_cation_host(write_dist_wannier=False, rcutoff_coordination=False, plot_wannier_cation_anion_angle=False, plot_histogram2D=False, plot_histogram_method='snsplot')
+    wannier_cation_host(write_dist_wannier=False, rcutoff_coordination=False, plot_wannier_cation_anion_angle=False, plot_histogram2D=False, plot_histogram_method='snsplot')
     # wannier_anion_host(write_dist_wannier=False, plot_histogram2D=False, plot_histogram_method='snsplot')
