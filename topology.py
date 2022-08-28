@@ -24,7 +24,7 @@ def wrap_atoms(cell):
 
     '''
     atom_Data = Trajectory(filename=fileTraj)
-    coordinates = atom_Data.coordinates[0]
+    coordinates = atom_Data.coordinates[0] # only implemented in first step
 
     for atom_ID, value in enumerate(coordinates):
         coord = np.atleast_2d(value[1:])
@@ -32,8 +32,38 @@ def wrap_atoms(cell):
 
     return coordinates
 
-def hydrogen_passivate():
-    pass
+def hydrogen_passivate(cutoff=2.3):
+    '''Passivate the singlet oxygen with hydrogen atom.
+    '''
+    atom_Data = Trajectory(filename=fileTraj)
+    coordinates = atom_Data.coordinates[0] # only implemented in first step
+
+    hydrogen_coordinate = []
+
+    for atom_ID, value in enumerate(coordinates):
+        
+        count = 0
+        if value[0] == 'O': #passivating only oxygen atom
+            coord_atom = np.array(value[1:], dtype=np.float_)
+            
+            for atom_ID2, value2 in enumerate(coordinates):
+                
+                if value2[0] != 'O':
+                  coord_atom2 = np.array(value2[1:], dtype=np.float_)
+                  _, dist = displacement(coord_atom, coord_atom2)
+                  
+                  if dist < cutoff:
+                     count += 1
+                     neighbour_atom = coord_atom2
+            
+            if count == 1:
+                vec = coord_atom - neighbour_atom
+                normal_vec = vec/np.linalg.norm(vec)
+                new_coord = np.asarray(normal_vec + coord_atom, dtype=np.float32)
+                hydrogen_coordinate.append(['H', *new_coord[:]])
+
+    return coordinates, hydrogen_coordinate
+
 
 def ground_the_molecule(ID0, ID1, ID2):
     ''' Ground the molecule in xy-plane (convention) annd put it
