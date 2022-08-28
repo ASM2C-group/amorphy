@@ -2,6 +2,8 @@ import numpy as np
 from numpy import pi, sin, cos, arccos, sqrt, dot
 from numpy.linalg import norm
 
+eps = 10e-9
+
 def unit_vector(x):
     """Return a unit vector in the same direction as x."""
     y = np.array(x, dtype='float')
@@ -145,3 +147,51 @@ def check_orthorhombic(cell):
 
     Decesion =  not (np.flatnonzero(cell) % 4).any()
     return Decesion
+
+def rotate(angle, around_vector, position, center=(0,0,0), radian=False):
+
+    '''This function gives the rotates xyz coordinates of position by an angle of 
+       "angle (in deg)" along vector "around_vector" with reference to "center" 
+       point.
+
+       Parameters:
+       ------------------------------------------------------------------------
+       angle         : Angle to be rotated in degrees
+       around_vector : Vector along the rotation has to be performed
+       position      : xyz coordinates of point to be rotated
+       center        : Coordinate along which rotation has to be performed along 
+                       "around_vector".
+       radian        : Boolean (True/False). If true, "angle" is in radians.
+       
+       Return:
+       ------------------------------------------------------------------------
+       position      : Rotated (counter-clockwise) xyz coordinates 
+
+    '''
+    around_vector = np.array(around_vector, dtype=float)
+
+    norm = np.linalg.norm
+    normv = norm(around_vector)
+    if normv == 0.0:
+        raise ZeroDivisionError('Cannot rotate: norm(around_vector) == 0')
+
+    if not radian:
+        angle *= np.pi / 180
+
+    around_vector /= normv
+    c = np.cos(angle)
+    s = np.sin(angle)
+
+    center = np.asarray(center, float)
+    position = np.asarray(position, float)
+
+    p = position - center
+
+    position[:] = (c * p - np.cross(p, s * around_vector) +
+                   np.outer(np.dot(p, around_vector), (1.0 - c) * around_vector) + 
+                   center)
+
+    position[np.abs(position) < eps] = 0
+    return position
+
+

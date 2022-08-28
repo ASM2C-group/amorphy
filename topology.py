@@ -1,54 +1,108 @@
 import numpy as np
 from read_trajectory import Trajectory
 from inputValues import fileTraj, Directory
-from periodic_boundary_condition import displacement
+from geometric_properties import rotate
+from distance_minkowski_reduction import wrap_positions
+from periodic_boundary_condition import displacement, angle
 from tqdm import  tqdm
 
-def rotate():
-    pass
 
 def translate():
     pass
 
+
+def wrap_atoms(cell):
+    '''Wrap the atoms in the box.
+
+       Parameters:
+       --------------------------------------------------------
+       cell : 3*3 lattice matrix
+
+       Result:
+       --------------------------------------------------------
+       coordinates : wrapped atoms configuration
+
+    '''
+    atom_Data = Trajectory(filename=fileTraj)
+    coordinates = atom_Data.coordinates[0]
+
+    for atom_ID, value in enumerate(coordinates):
+        coord = np.atleast_2d(value[1:])
+        coordinates[atom_ID][1:] = wrap_positions(np.asarray(coord, dtype=np.float_), cell)[0]
+
+    return coordinates
+
 def hydrogen_passivate():
     pass
 
-def ground_the_molecule(ID1, ID2, ID3):
+def ground_the_molecule(ID0, ID1, ID2):
     ''' Ground the molecule in xy-plane (convention) annd put it
         close to center in the xy plane.
 
         Parameters:
         --------------------------------------------------------
-        ID1 = ID of atom 1
-        ID2 = ID of atom 2 (Centered atom in xy-plane)
-        ID3 = ID of atom 3
+        ID0 = ID of atom 1
+        ID1 = ID of atom 2 (Centered atom in xy-plane)
+        ID2 = ID of atom 3
      
         Return:
         --------------------------------------------------------
         coord = coodinates of grounded molecule
 
     '''
-    #assert isinstance(ID1, int)
-    #assert isinstance(ID2, int)
-    #assert isinstance(ID3, int)
+    assert isinstance(ID0, int)
+    assert isinstance(ID1, int)
+    assert isinstance(ID2, int)
 
-    #atom_Data = Trajectory(filename=fileTraj)
-    #coordinates = atom_Data.coordinates
+    atom_Data = Trajectory(filename=fileTraj)
+    coordinates = atom_Data.coordinates
 
-    #for atom_ID, value in enumerate(coordinates[0]):
-    #   if atom_ID == ID2:
-    #       x2, y2, z2 = value[1:]
-    ##print(x2, y2, z2)
-    #coord = coordinates[0]
-    #print(coord)
-    #print()
-    #for atom_ID, value in enumerate(coordinates[0]):
-    #    #print(coord[atom_ID][0],"  "  , coord[atom_ID][1], "  " , coord[atom_ID][2],"  " , coord[atom_ID][3]-z2)
-    #    print(coord[atom_ID][1:]-[0,0,z2])
-    pass
-        
+    # 1. Grabbing x,y,z coordinate of ID1, ID0 & ID2  atom
+    coord_atom_0 = np.array(coordinates[0][ID0][1:], dtype=np.float_)                     
+    coord_atom_1 = np.array(coordinates[0][ID1][1:], dtype=np.float_)
+    coord_atom_2 = np.array(coordinates[0][ID2][1:], dtype=np.float_)
+    
+    coord = coordinates[0]
 
+    # 2. Shifting the molecule with the ID0 atom placed on z=0 plane.
+    for atom_ID, value in enumerate(coordinates[0]):
+        coord[atom_ID][1:] = coord[atom_ID][1:]-[0,0,coord_atom_1[2]]
+    
+   
+    coord_atom_0 = np.array(coord[ID0][1:], dtype=np.float_)                     
+    coord_atom_1 = np.array(coord[ID1][1:], dtype=np.float_)
+    coord_atom_2 = np.array(coord[ID2][1:], dtype=np.float_)
 
+    # 3. Fixing atom ID1, and calculating angle between ID0, ID1 
+    #    & projection of ID0 on z=0 plane.
+    proj_0 = coord_atom_0 - [0, 0, coord_atom_0[2]]
+    Angle01 = angle(coord_atom_0, coord_atom_1, proj_0)
+
+    perp_to_proj_0 = [-(proj_0[1]  - coord_atom_1[1])/(proj_0[0] - coord_atom_1[0]), 1, 0]
+
+    # 4. Now rotate the whole molecule with angle "Angle12" 
+    #    to bring atom ID1 on z=0 plane.
+    for atom_ID, value in enumerate(coord): 
+        coord[atom_ID][1:] = rotate(angle=Angle01, around_vector=perp_to_proj_0, position=coord[atom_ID][1:], center=coord_atom_1, radian=False)
+
+    coord_atom_0 = np.array(coord[ID0][1:], dtype=np.float_)                     
+    coord_atom_1 = np.array(coord[ID1][1:], dtype=np.float_)
+    coord_atom_2 = np.array(coord[ID2][1:], dtype=np.float_)
+    
+    # 5. Find the normal vector of plane passing through ID0, ID1, ID2.
+    #    Compute angle between the normal vector and z=0 plane.
+    vector10 = coord_atom_0 - coord_atom_1
+    vector21 = coord_atom_2 - coord_atom_1
+
+    normal_vector = np.cross(vector10, vector21)
+    Angle_plane = np.arccos(np.clip(np.dot(normal_vector, [0,0,1])/np.linalg.norm(normal_vector), -1, 1))
+    
+
+    # 6. Rotate the plane with ID0, ID1, ID2 atom to coincide with plane z=0.
+    for atom_ID, value in enumerate(coord):
+        coord[atom_ID][1:] = rotate(angle=Angle_plane, around_vector=vector10, position=coord[atom_ID][1:], center=coord_atom_1, radian=True)
+
+    return coord
 
 def get_constrained_frameID(atom_name_1, atom_name_2, atom_name_3, 
                           rcut_12=float(0), 
