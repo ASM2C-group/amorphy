@@ -23,8 +23,8 @@ __numba.version__ = '0.55.1'
 #                    [ 0.0000000000,         0.0000000000,        15.7139997482]])
 
 
-#A, B, C =  16.23892446618999,  16.23892446618999,  16.2389244661899 # x = 0.0
-A, B, C = 19.5662, 19.5662, 19.5662   # x =0.1
+A, B, C =  16.23892446618999,  16.23892446618999,  16.2389244661899 # x = 0.0
+#A, B, C = 19.5662, 19.5662, 19.5662   # x =0.1
 #A, B, C = 19.47335141773691, 19.47335141773691, 19.47335141773691 # x =0.2
 #A, B, C = 19.38359280464976, 19.38359280464976, 19.38359280464976 # x = 0.3
 #A, B, C = 20.069383346824402, 20.069383346824402, 20.069383346824402 # x =0.4
@@ -44,11 +44,11 @@ minkowski_reduce_cell = minkowski_reduce(LatticeMatrix)
 Directory = os.getcwd()
 if Directory[-1] != '/': Directory = Directory + '/'
 fileCharge = os.path.join(Directory + 'DDEC6_even_tempered_net_atomic_charges.xyz')
-fileTraj = os.path.join(Directory + '../TeO2-HOMO_centers.xyz')
+fileTraj = os.path.join(Directory + 'symmetry.xyz')
 ##############################################
 
 atom_name_1 = 'Te'  # Host atom symbol
-atom_name_2 = 'X'   # Wannier center symbol
+atom_name_2 = 'O'   # Wannier center symbol
 atom_name_3 = 'O'   # Secondary atatom_name_1
 
 ##############################################
@@ -79,14 +79,14 @@ bond_len_cut_pair23 = 2.8
 if __name__ == "__main__":
 
     #################################################################################
-    sys.stderr.write(logo.art)                                                       
-    if is_orthorhombic:                                                              
-        sys.stderr.write('Cell is orthorhmobic, so uncomment njit decorator in '\
-              'periodic_boundary_condition.py module to gain speed. \n \n')          
-    else:                                                                            
-        sys.stderr.write('If there is warning from numba, thus you need to comment '\
-              'njit decorator in periodic_boundary_condition.py module. \n \n')      
-    sys.stdout.flush()                                                               
+    #sys.stderr.write(logo.art)                                                       
+    #if is_orthorhombic:                                                              
+    #    sys.stderr.write('Cell is orthorhmobic, so uncomment njit decorator in '\
+    #          'periodic_boundary_condition.py module to gain speed. \n \n')          
+    #else:                                                                            
+    #    sys.stderr.write('If there is warning from numba, thus you need to comment '\
+    #          'njit decorator in periodic_boundary_condition.py module. \n \n')      
+    #sys.stdout.flush()                                                               
     #################################################################################
 
     def rdf(Histogram, binwidth=0.005, write=False):
@@ -202,7 +202,7 @@ if __name__ == "__main__":
         tik = time.perf_counter()
         TeO2 = WannierAnalysis()
         average_coordination, max_dist, angle, wannier_dist_ener = \
-        TeO2.compute_neighbour_wannier(compute_qnm_statistics=False, print_BO_NBO=False, 
+        TeO2.compute_neighbour_wannier(compute_qnm_statistics=True, print_BO_NBO=True, 
                                        chargeAnalysis=False, method='DDEC6', 
                                        write_output=True, 
                                        print_output=False, 
@@ -240,8 +240,8 @@ if __name__ == "__main__":
         # To create data file with coordination and rcut values
         # This is suppose to use with bash script rcut_coordination.sh 
         if rcutoff_coordination:
-            #rcut_off = rcut_HostAtom_SecondaryAtom
-            rcut_off = AnlgeCut_HostWannier_Host_SecondaryAtom
+            rcut_off = rcut_HostAtom_SecondaryAtom
+            #rcut_off = AnlgeCut_HostWannier_Host_SecondaryAtom
             with open('rcut-coordination.dat', 'a') as fileOpen:
                 fileOpen.write(f'  {rcut_off}   {average_coordination}  \n ')
 
@@ -307,24 +307,59 @@ if __name__ == "__main__":
             for cut in tqdm.tqdm(np.arange(2.2,3.8,0.05)):
                 coord_BO = 0
                 for index, id_list in enumerate(BO_X):
-                    coordination = compute_coordination_number(atom1=atom_name_1, atom2=id_list, rcut=cut, step=index)
+                    coordination = compute_coordination_number(atom1='Tl', atom2=id_list, rcut=cut, step=index)
                     coord_BO += coordination
                 
                 coord_NBO = 0
                 for index, id_list in enumerate(NBO_X):
-                    coordination = compute_coordination_number(atom1=atom_name_1, atom2=id_list, rcut=cut, step=index)
+                    coordination = compute_coordination_number(atom1='Tl', atom2=id_list, rcut=cut, step=index)
                     coord_NBO += coordination
 
                 file_BO_NBO.write(f'{round(cut,2)}  {round(coord_BO/len(np.unique(BO_step)) , 4)}     {round( coord_NBO/len(np.unique(NBO_step)) , 4)} \n')
 
+    def ground_center_molecule(ID0, ID1, ID2):
+        '''ID1 is the center atom to be ground first.
+        '''
+        from topology import ground_the_molecule
+
+        coord = ground_the_molecule(ID0=ID0, ID1=ID1, ID2=ID2)
+        print(len(coord))
+        print("Lattice: ",A, B, C)
+        for i in coord:
+            print(*i)
+    
+    def wrap_atom():
+
+        from topology import wrap_atoms
+        coord = wrap_atoms(cell=LatticeMatrix)
+
+        print(len(coord))
+        print("Lattice: ",A, B, C)
+        for i in coord:
+            print(*i)
+
+    def hydrogen_passivation():
+       
+       from topology import hydrogen_passivate
+
+       coordinate, hydrogen_coordinate = hydrogen_passivate(cutoff=2.4)
+       coordinates = np.concatenate((coordinate, hydrogen_coordinate), axis=0)
+
+       print(len(coordinates))
+       print("Lattice: ", A, B, C)
+       for i in coordinates:
+           print(*i)
+
 
     #######################################################################################################################
-
+    hydrogen_passivation()
+    # wrap_atom()
+    # ground_center_molecule(ID0=0, ID1=1, ID2=2)
     # get_frameID_with_constraint(rcut_12=1.0,rcut_23=2.2, rcut_13=1.0, rcut_11=3.0, rcut_22=1.0, rcut_33=2.2)
     # compute_all_distances(atom_name1=f'Tl', atom_name2=f'O@oxyg', minmax=True, step=stp)
     # BO_NBO_Coordination(atom_name_1='Tl')
     # rdf(Histogram=True, binwidth=0.005, write=True)
     # bdf(write=True)
     # writetraj(cutoff=1.2)
-    wannier_cation_host(write_dist_wannier=False, rcutoff_coordination=False, plot_wannier_cation_anion_angle=False, plot_histogram2D=False, plot_histogram_method='snsplot')
+    # wannier_cation_host(write_dist_wannier=False, rcutoff_coordination=False, plot_wannier_cation_anion_angle=False, plot_histogram2D=False, plot_histogram_method='snsplot')
     # wannier_anion_host(write_dist_wannier=False, plot_histogram2D=False, plot_histogram_method='snsplot')
