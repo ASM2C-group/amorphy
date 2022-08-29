@@ -213,7 +213,7 @@ class WannierAnalysis(Trajectory):
                             if print_output:
                                 if chargeAnalysis:
                                     print(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                        f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID-1],4):.4f} \t' +
+                                        f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID],4):.4f} \t' +
                                         f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmtery: {BondAsymmetryValue} \t  XYZ: {coord_atom1}')
                                 else:
                                     print(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
@@ -224,7 +224,7 @@ class WannierAnalysis(Trajectory):
                                 fw = open(Directory + atom_name_1 +'-Structure-analysis-result.dat','a')
                                 if chargeAnalysis:
                                     fw.write(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                            f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID-1],4):.4f} \t' +
+                                            f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID],4):.4f} \t' +
                                             f'Bonding Atom ID: {Atom_ID_secondary_list} \t Asymmtery: {BondAsymmetryValue} \t  XYZ: {coord_atom1} \n')
                                 else: 
                                     fw.write(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
@@ -359,52 +359,45 @@ class WannierAnalysis(Trajectory):
 
             # For charge Analysis
             if chargeAnalysis:
-                charge = self.chargeAnalysis(fileCharge, step, method=method)    
+                charge = ChargeAnalysis.chargeAnalysis(self, self.dataCharge, step, method=method)
+
 
             # Counting number of host atoms
             count_number_of_host_atoms = 0
-            Atom_ID = 0  # Primary Atom ID
             
-            
-            for i, atom1 in enumerate(self.coordinates[step]):
+            for atom_ID, value in enumerate(self.coordinates[step]):
                 
-                # Serial number of atom in coordinate file
-                Atom_ID += 1
-                
-                if atom1[0] == atom_name_1:
+                if value[0] == atom_name_1:
                     count_number_of_host_atoms += 1
-                    coord_atom1 = np.array(atom1[1:], dtype=np.float_)
+                    coord_atom1 = np.array(value[1:], dtype=np.float_)
                     
                     # counter for  finding number of cation atoms attached
                     count_number_of_secondary_atoms = 0
                     
-                    Atom_ID_secondary = 0 # Secondary Atom ID
                     Atom_ID_secondary_list = []
                     Atom_ID_secondary_coordinates = []
                     
-                    Atom_ID_Wannier_host = 0
                     count_number_of_wannier_near_host_atom = 0
 
-                    for l, atom_W in enumerate(self.coordinates[step]):
-                        Atom_ID_Wannier_host += 1
+                    for atom_ID_W_lp, value_W_lp in enumerate(self.coordinates[step]):
 
-                        if atom_W[0] == atom_name_2:
-                            coord_wannier_near_host = np.array(atom_W[1:], dtype=np.float_)
+                        if value_W_lp[0] == atom_name_2:
+                            coord_wannier_near_host = np.array(value_W_lp[1:], dtype=np.float_)
                             _, dist_1W_near_host = displacement(coord_atom1, coord_wannier_near_host)
-                            Wannier_Distance_Energy.append([dist_1W_near_host, self.coordinates_energy[step][Atom_ID_Wannier_host-1], Atom_ID])
-                            # print(dist_1W_near_host, self.coordinates_energy[step][Atom_ID_Wannier_host-1]) ## Test
+                            Wannier_Distance_Energy.append([dist_1W_near_host, self.coordinates_energy[step][atom_ID_W_lp], atom_ID])
+                            
                             if dist_1W_near_host <  rcut_HostAtom_Wannier:
                                 count_number_of_wannier_near_host_atom += 1
                         
-                    
+
                     # Looking for secondary cation atom 
-                    for j, atom2 in enumerate(self.coordinates[step]):
+                    for atom_ID2, value2 in enumerate(self.coordinates[step]):
                         
-                        Atom_ID_secondary += 1
+                        #Atom_ID_secondary += 1
                         
-                        if atom2[0] == 'Tl' or atom2[0] == 'Te': # [if atom2[0] == atom_name_3] is not used since secondary atom can be any cation
+                        if value2[0] == 'Te': #or atom2[0] == 'Tl': # [if atom2[0] == atom_name_3] is not used since secondary atom can be any cation
                         # if atom2[0] == 'O': # TEST #
-                            coord_atom2 = np.array(atom2[1:], dtype=np.float_)
+                            coord_atom2 = np.array(value2[1:], dtype=np.float_)
                             
                             # distance between host(primary) atom and secondary cation atom
                             _, dist_12 = displacement(coord_atom2, coord_atom1)
@@ -416,9 +409,9 @@ class WannierAnalysis(Trajectory):
                             
                             if dist_12 < rcut_HostAtom_SecondaryAtom : # cutoff for cation-anion
                             
-                                for k, atom_wannier in enumerate(self.coordinates[step]):
-                                    if atom_wannier[0] == atom_name_2:
-                                        coord_atom_wannier = np.array(atom_wannier[1:], dtype=np.float_)
+                                for atom_ID_wannier, value_wannier in enumerate(self.coordinates[step]):
+                                    if value_wannier[0] == atom_name_2:
+                                        coord_atom_wannier = np.array(value_wannier[1:], dtype=np.float_)
                                     
                                         _, dist_1W = displacement(coord_atom1, coord_atom_wannier)
                                         _, dist_2W = displacement(coord_atom2, coord_atom_wannier)
@@ -434,7 +427,7 @@ class WannierAnalysis(Trajectory):
                                             
                                             dist_2W_near_cation, coord_wannier_near_cation, count_number_of_wanniers_near_cation, Wannier_Distance_Energy = \
                                                   self.get_farthest_atom(atom_name_search=atom_name_2, coord_ref=coord_atom2,
-                                                                    rcut=rcut_HostAtom_Wannier, step=step, Atom_ID=Atom_ID,
+                                                                    rcut=rcut_HostAtom_Wannier, step=step, Atom_ID=atom_ID,
                                                                     print_degeneracy=print_degeneracy)
                                             
                                             degree_angle = angle(coord_wannier_near_cation, coord_atom2, coord_atom1)
@@ -442,7 +435,7 @@ class WannierAnalysis(Trajectory):
                                             # This will help in identifying a chemical bond
                                             if degree_angle >= AnlgeCut_HostWannier_Host_SecondaryAtom:
                                                 count_number_of_secondary_atoms += 1
-                                                Atom_ID_secondary_list.append(Atom_ID_secondary)
+                                                Atom_ID_secondary_list.append(atom_ID2)
                                                 Atom_ID_secondary_coordinates.append(coord_atom2)
                                                 
 
@@ -450,22 +443,22 @@ class WannierAnalysis(Trajectory):
                     BondAsymmetryValue = BondAsymmetry(count_number_of_secondary_atoms, coord_atom1, Atom_ID_secondary_coordinates)
                     if print_output:
                         if chargeAnalysis:
-                            print(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                  f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Charge: {round(charge[Atom_ID-1],4):.4f} \t' + 
+                            print(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
+                                  f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Charge: {round(charge[atom_ID],4):.4f} \t' + 
                                   f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
                         else: 
-                            print(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
+                            print(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                   f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Bonding-Atom-ID: {Atom_ID_secondary_list} \t'+
                                   f'Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
                         
                     if write_output:
                         fw = open(Directory +atom_name_1 +'-Structure-analysis-result.dat','a')
                         if chargeAnalysis:
-                            fw.write(f'Step: {step} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t'+
-                                     f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Charge: {round(charge[Atom_ID-1],4):.4f}, \t' +
+                            fw.write(f'Step: {step} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t'+
+                                     f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Charge: {round(charge[atom_ID],4):.4f}, \t' +
                                      f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')
                         else:
-                            fw.write(f'Step: {step} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
+                            fw.write(f'Step: {step} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                      f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Bonding-Atom-ID: {Atom_ID_secondary_list}, \t' +
                                      f'Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')
                                  
@@ -550,12 +543,10 @@ class WannierAnalysis(Trajectory):
         dist_of_various_wannier_centers_near_host_atom =  []
 
         # Atom_ID_secondary = 0 # Secondary Atom ID
-        Atom_ID_Wannier = 0
         Atom_ID_Wannier_list = []
         Wannier_Distance_Energy = []
-        for j, atom_wannier in enumerate(self.coordinates[step]):
+        for atom_ID_wannier, atom_wannier in enumerate(self.coordinates[step]):
 
-            Atom_ID_Wannier += 1
 
             if atom_wannier[0] == atom_name_search:
                 coord_atom_wannier_near_host = np.array(atom_wannier[1:], dtype=np.float_)
@@ -568,7 +559,7 @@ class WannierAnalysis(Trajectory):
                     dist_of_various_wannier_centers_near_host_atom.append(dist_atom_wannier_near_host)
 
                     Wannier_Distance_Energy.append(\
-                    [dist_atom_wannier_near_host, self.coordinates_energy[step][Atom_ID_Wannier-1], Atom_ID])
+                    [dist_atom_wannier_near_host, self.coordinates_energy[step][atom_ID_wannier], Atom_ID])
 
 
         if count_number_of_wanniers_near_host > 1 :

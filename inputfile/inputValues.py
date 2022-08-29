@@ -79,14 +79,14 @@ bond_len_cut_pair23 = 2.8
 if __name__ == "__main__":
 
     #################################################################################
-    #sys.stderr.write(logo.art)                                                       
-    #if is_orthorhombic:                                                              
-    #    sys.stderr.write('Cell is orthorhmobic, so uncomment njit decorator in '\
-    #          'periodic_boundary_condition.py module to gain speed. \n \n')          
-    #else:                                                                            
-    #    sys.stderr.write('If there is warning from numba, thus you need to comment '\
-    #          'njit decorator in periodic_boundary_condition.py module. \n \n')      
-    #sys.stdout.flush()                                                               
+    sys.stderr.write(logo.art)                                                       
+    if is_orthorhombic:                                                              
+        sys.stderr.write('Cell is orthorhmobic, so uncomment njit decorator in '\
+              'periodic_boundary_condition.py module to gain speed. \n \n')          
+    else:                                                                            
+        sys.stderr.write('If there is warning from numba, thus you need to comment '\
+              'njit decorator in periodic_boundary_condition.py module. \n \n')      
+    sys.stdout.flush()                                                               
     #################################################################################
 
     def rdf(Histogram, binwidth=0.005, write=False):
