@@ -6,6 +6,7 @@ from distance_minkowski_reduction import wrap_positions
 from periodic_boundary_condition import displacement, angle
 from tqdm import  tqdm
 
+eps = 10e-5
 
 def translate():
     pass
@@ -109,8 +110,14 @@ def ground_the_molecule(ID0, ID1, ID2):
     Angle01 = angle(coord_atom_0, coord_atom_1, proj_0)
 
     perp_to_proj_0 = [-(proj_0[1]  - coord_atom_1[1])/(proj_0[0] - coord_atom_1[0]), 1, 0]
+    
+    # 4. Testing direction of angle which leads to placing ID0 on z=o plane
+    t = rotate(angle=Angle01, around_vector=perp_to_proj_0, position=coord[ID0][1:], center=coord_atom_1, radian=False)[2]
+    if abs(t) > eps:
+        Angle01 = -Angle01
 
-    # 4. Now rotate the whole molecule with angle "Angle12" 
+
+    # 5. Now rotate the whole molecule with angle "Angle12" 
     #    to bring atom ID1 on z=0 plane.
     for atom_ID, value in enumerate(coord): 
         coord[atom_ID][1:] = rotate(angle=Angle01, around_vector=perp_to_proj_0, position=coord[atom_ID][1:], center=coord_atom_1, radian=False)
@@ -119,7 +126,7 @@ def ground_the_molecule(ID0, ID1, ID2):
     coord_atom_1 = np.array(coord[ID1][1:], dtype=np.float_)
     coord_atom_2 = np.array(coord[ID2][1:], dtype=np.float_)
     
-    # 5. Find the normal vector of plane passing through ID0, ID1, ID2.
+    # 6. Find the normal vector of plane passing through ID0, ID1, ID2.
     #    Compute angle between the normal vector and z=0 plane.
     vector10 = coord_atom_0 - coord_atom_1
     vector21 = coord_atom_2 - coord_atom_1
@@ -127,8 +134,13 @@ def ground_the_molecule(ID0, ID1, ID2):
     normal_vector = np.cross(vector10, vector21)
     Angle_plane = np.arccos(np.clip(np.dot(normal_vector, [0,0,1])/np.linalg.norm(normal_vector), -1, 1))
     
+    # 7. Testing direction of angle which leads to placing ID2 on z=o plane
+    t2 = rotate(angle=Angle_plane, around_vector=vector10, position=coord[ID2][1:], center=coord_atom_1, radian=True)[2]
+    if abs(t2)  > eps:
+        Angle_plane = -Angle_plane
 
-    # 6. Rotate the plane with ID0, ID1, ID2 atom to coincide with plane z=0.
+    # 8. Rotate the plane with ID0, ID1, ID2 atom to coincide with plane z=0.
+
     for atom_ID, value in enumerate(coord):
         coord[atom_ID][1:] = rotate(angle=Angle_plane, around_vector=vector10, position=coord[atom_ID][1:], center=coord_atom_1, radian=True)
 
