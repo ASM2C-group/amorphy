@@ -1,22 +1,38 @@
 import numpy as np
 from read_trajectory import Trajectory
-from inputValues import fileTraj, Directory
+from inputValues import fileTraj, Directory, fileCharge
 from geometric_properties import rotate
 from distance_minkowski_reduction import wrap_positions
 from periodic_boundary_condition import displacement, angle
 from tqdm import  tqdm
+from elemental_data import atomic_no
+from  numba import njit
+from numba.typed import List
 
 eps = 10e-5
 
-def translate():
+def translate(i, j, k):
+    '''Provide the i, j and k units to shift the atoms in respected 
+       directions.
+
+       Parameters:
+       -------------------------------------------------------
+       i : Units of shift in x-direction
+       j : Units of shift in x-direction
+       k : Units of shift in x-direction
+
+       Result:
+       -------------------------------------------------------
+       coordinates: shifted coordinates
+    '''
     pass
 
-
-def wrap_atoms(cell):
+def wrap_atoms(coordinates, cell):
     '''Wrap the atoms in the box.
 
        Parameters:
        --------------------------------------------------------
+       coordinates : x,y & z configuration coordinates
        cell : 3*3 lattice matrix
 
        Result:
@@ -24,8 +40,6 @@ def wrap_atoms(cell):
        coordinates : wrapped atoms configuration
 
     '''
-    atom_Data = Trajectory(filename=fileTraj)
-    coordinates = atom_Data.coordinates[0] # only implemented in first step
 
     for atom_ID, value in enumerate(coordinates):
         coord = np.atleast_2d(value[1:])
@@ -33,23 +47,23 @@ def wrap_atoms(cell):
 
     return coordinates
 
-def hydrogen_passivate(cutoff=2.3):
+def hydrogen_passivate(coordinates, cutoff=2.3):
     '''Passivate the singlet oxygen with hydrogen atom.
     '''
-    atom_Data = Trajectory(filename=fileTraj)
-    coordinates = atom_Data.coordinates[0] # only implemented in first step
+    #atom_Data = Trajectory(filename=fileTraj)
+    #coordinates = atom_Data.coordinates[0] # only implemented in first step
 
     hydrogen_coordinate = []
 
     for atom_ID, value in enumerate(coordinates):
         
         count = 0
-        if value[0] == 'O': #passivating only oxygen atom
+        if value[0] == atomic_no('O'): #passivating only oxygen atom
             coord_atom = np.array(value[1:], dtype=np.float_)
             
             for atom_ID2, value2 in enumerate(coordinates):
                 
-                if value2[0] != 'O':
+                if value2[0] != atomic_no('O'):
                   coord_atom2 = np.array(value2[1:], dtype=np.float_)
                   _, dist = displacement(coord_atom, coord_atom2)
                   
@@ -60,13 +74,13 @@ def hydrogen_passivate(cutoff=2.3):
             if count == 1:
                 vec = coord_atom - neighbour_atom
                 normal_vec = vec/np.linalg.norm(vec)
-                new_coord = np.asarray(normal_vec + coord_atom, dtype=np.float32)
-                hydrogen_coordinate.append(['H', *new_coord[:]])
+                new_coord = np.asarray(normal_vec + coord_atom, dtype=np.float_)
+                hydrogen_coordinate.append(['1.0', *new_coord[:]])
 
     return coordinates, hydrogen_coordinate
 
 
-def ground_the_molecule(ID0, ID1, ID2):
+def ground_the_molecule(coordinates, ID0, ID1, ID2):
     ''' Ground the molecule in xy-plane (convention) annd put it
         close to center in the xy plane.
 
@@ -85,15 +99,12 @@ def ground_the_molecule(ID0, ID1, ID2):
     assert isinstance(ID1, int)
     assert isinstance(ID2, int)
 
-    atom_Data = Trajectory(filename=fileTraj)
-    coordinates = atom_Data.coordinates
-
     # 1. Grabbing x,y,z coordinate of ID1, ID0 & ID2  atom
-    coord_atom_0 = np.array(coordinates[0][ID0][1:], dtype=np.float_)                     
-    coord_atom_1 = np.array(coordinates[0][ID1][1:], dtype=np.float_)
-    coord_atom_2 = np.array(coordinates[0][ID2][1:], dtype=np.float_)
+    coord_atom_0 = np.array(coordinates[ID0][1:], dtype=np.float_)                     
+    coord_atom_1 = np.array(coordinates[ID1][1:], dtype=np.float_)
+    coord_atom_2 = np.array(coordinates[ID2][1:], dtype=np.float_)
     
-    coord = coordinates[0]
+    coord = np.copy(coordinates)
 
     # 2. Shifting the molecule with the ID0 atom placed on z=0 plane.
     for atom_ID, value in enumerate(coordinates[0]):
@@ -112,16 +123,16 @@ def ground_the_molecule(ID0, ID1, ID2):
     perp_to_proj_0 = [-(proj_0[1]  - coord_atom_1[1])/(proj_0[0] - coord_atom_1[0]), 1, 0]
     
     # 4. Testing direction of angle which leads to placing ID0 on z=o plane
-    t = rotate(angle=Angle01, around_vector=perp_to_proj_0, position=coord[ID0][1:], center=coord_atom_1, radian=False)[2]
+    ID0_coord = np.copy(coord[ID0][1:])
+    t = rotate(angle=Angle01, around_vector=perp_to_proj_0, position=ID0_coord, center=coord_atom_1, radian=False)[2]
     if abs(t) > eps:
         Angle01 = -Angle01
-
 
     # 5. Now rotate the whole molecule with angle "Angle12" 
     #    to bring atom ID1 on z=0 plane.
     for atom_ID, value in enumerate(coord): 
         coord[atom_ID][1:] = rotate(angle=Angle01, around_vector=perp_to_proj_0, position=coord[atom_ID][1:], center=coord_atom_1, radian=False)
-
+    
     coord_atom_0 = np.array(coord[ID0][1:], dtype=np.float_)                     
     coord_atom_1 = np.array(coord[ID1][1:], dtype=np.float_)
     coord_atom_2 = np.array(coord[ID2][1:], dtype=np.float_)
@@ -135,7 +146,8 @@ def ground_the_molecule(ID0, ID1, ID2):
     Angle_plane = np.arccos(np.clip(np.dot(normal_vector, [0,0,1])/np.linalg.norm(normal_vector), -1, 1))
     
     # 7. Testing direction of angle which leads to placing ID2 on z=o plane
-    t2 = rotate(angle=Angle_plane, around_vector=vector10, position=coord[ID2][1:], center=coord_atom_1, radian=True)[2]
+    ID2_coord = np.copy(coord[ID2][1:])
+    t2 = rotate(angle=Angle_plane, around_vector=vector10, position=ID2_coord, center=coord_atom_1, radian=True)[2]
     if abs(t2)  > eps:
         Angle_plane = -Angle_plane
 
@@ -194,12 +206,12 @@ def get_constrained_frameID(atom_name_1, atom_name_2, atom_name_3,
                 _, distance = displacement(coord_1, coord_2)
    
                 if distance > 0:
-                    if   value[0] == atom_name_1 and value2[0] == atom_name_2 and distance <= MinDist_12:  MinDist_12 = distance ; continue 
-                    elif value[0] == atom_name_2 and value2[0] == atom_name_3 and distance <= MinDist_23:  MinDist_23 = distance ; continue
-                    elif value[0] == atom_name_1 and value2[0] == atom_name_3 and distance <= MinDist_13:  MinDist_13 = distance ; continue
-                    elif value[0] == atom_name_1 and value2[0] == atom_name_1 and distance <= MinDist_11:  MinDist_11 = distance ; continue
-                    elif value[0] == atom_name_2 and value2[0] == atom_name_2 and distance <= MinDist_22:  MinDist_22 = distance ; continue
-                    elif value[0] == atom_name_3 and value2[0] == atom_name_3 and distance <= MinDist_33:  MinDist_33 = distance ; continue
+                    if   value[0] == atomic_no(atom_name_1) and value2[0] == atomic_no(atom_name_2) and distance <= MinDist_12:  MinDist_12 = distance ; continue 
+                    elif value[0] == atomic_no(atom_name_2) and value2[0] == atomic_no(atom_name_3) and distance <= MinDist_23:  MinDist_23 = distance ; continue
+                    elif value[0] == atomic_no(atom_name_1) and value2[0] == atomic_no(atom_name_3) and distance <= MinDist_13:  MinDist_13 = distance ; continue
+                    elif value[0] == atomic_no(atom_name_1) and value2[0] == atomic_no(atom_name_1) and distance <= MinDist_11:  MinDist_11 = distance ; continue
+                    elif value[0] == atomic_no(atom_name_2) and value2[0] == atomic_no(atom_name_2) and distance <= MinDist_22:  MinDist_22 = distance ; continue
+                    elif value[0] == atomic_no(atom_name_3) and value2[0] == atomic_no(atom_name_3) and distance <= MinDist_33:  MinDist_33 = distance ; continue
 
         print(f'Step: {step} \t' + 
               f'Mininum distance ({atom_name_1}-{atom_name_2}: {round(MinDist_12, 6)} \t' +
@@ -221,13 +233,17 @@ def get_constrained_frameID(atom_name_1, atom_name_2, atom_name_3,
 
     return constrained_frames
 
-def compute_coordination(atom_1, atom_2, rcut, step=0):
+@njit
+def compute_coordination(coordinates, atom_1, atom_2, rcut):
 
     ''' Compute the coordination number of atom_1 with respect to atom_2 within 
         cut-off radius rcut.
 
         Parameters:
         -------------------------------------------------------------------------
+        coordinates : x,y & z configuration coordinates
+            |______ : type ==> np.float_
+
         atom_1 : This is the host atom.
             |______ : type ==> str
 
@@ -237,46 +253,47 @@ def compute_coordination(atom_1, atom_2, rcut, step=0):
         rcut   : Radius of the coordination sphere
             |______ : type ==> float
 
-        step   : Index of the n'th frame.
-            |______ : type ==> int
-            |______ : default value ==> 0 (Initial configuration)
-
         Return:
         -------------------------------------------------------------------------
+        l_fold         : Percentage of l-fold
+            \______ : type ==> 1 dimensional nd.array
+
         n_coordination : Coordination number of atom_1
-            |______ : type ==> 1 dimensional nd.array
+            |______ : type ==> np.float
     '''
 
-    atom_Data = Trajectory(filename=fileTraj)
-    
-    assert isinstance(atom_1, str)
-    
-    coordinates = atom_Data.coordinates[step]
 
-    l_fold = np.zeros(12) # I assume no atom has more than 12 bonds.
+    #assert isinstance(atom_1, str)
+    #atom_Data = Trajectory(filename=fileTraj)
+    #coordinates = atom_Data.coordinates[step]
+
+
+    MAX_BONDS = 12 # I assume no atom has more than 12 bonds.
+    l_fold = np.zeros(MAX_BONDS)
 
     count_of_atom1 = 0
-
-    if isinstance(atom_2, list):
-        atom_2 = np.array(atom_2, dtype=np.int_)
+    
+    if isinstance(atom_2, List):
+        #atom_2 = np.array(atom_2, dtype=np.int_)
         for atom_ID, value in enumerate(coordinates):
             
              if value[0] == atom_1:
-                coord_atom_1 = np.array(value[1:], dtype=np.float_)
+                #coord_atom_1 = np.array(value[1:], dtype=np.float_)
                 count_of_atom1 += 1
 
                 coordination = 0
                 for atom_ID_second, value2 in enumerate(coordinates):
                     
                     if atom_ID_second in atom_2:
-                        coord_atom_2 = np.array(value2[1:], dtype=np.float_)
+                        #coord_atom_2 = np.array(value2[1:], dtype=np.float_)
 
-                        _, distance = displacement(coord_atom_1, coord_atom_2)
+                        _, distance = displacement(value2[1:], value[1:])
 
                         if distance < rcut:
                             coordination += 1
 
                 l_fold[coordination] += 1 
+                #print(step, " ", value[0], " ", atom_ID, " ", coordination , " ", coord_atom_1)
 
     elif isinstance(atom_2, str):
         for atom_ID, value in enumerate(coordinates):
@@ -295,11 +312,11 @@ def compute_coordination(atom_1, atom_2, rcut, step=0):
                         
                         if distance < rcut:
                             coordination += 1
- 
+
                 l_fold[coordination] += 1 
 
-    else:
-        raise TypeError(f'Type of atom_2: ({atom_2}) is not compatible with the funciton.')
+    #else:
+    #    raise SomeException(f'Type of atom_2: ({atom_2}) is not compatible with the funciton.')
 
     
     n_coordination = 0
@@ -307,6 +324,8 @@ def compute_coordination(atom_1, atom_2, rcut, step=0):
         n_coordination += fold * value  
 
     n_coordination = n_coordination / count_of_atom1
+
+    l_fold = 100 * l_fold / count_of_atom1   # percentage
 
     return l_fold, n_coordination
 
@@ -355,20 +374,20 @@ def compute_all_distances(atom_name_1,
             if len(atom_name_1) == 2:
                  
                 for atom_ID, value in enumerate(atom_Data.coordinates[step]):
-                    if  value[0] == atom_name_1[0] and atom_ID == int(atom_name_1[1]):
+                    if  value[0] == atomic_no(atom_name_1[0]) and atom_ID == int(atom_name_1[1]):
                         coord_atom_1 = np.array(value[1:], dtype=np.float_)
     
                         for atom_ID_2, value2 in enumerate(atom_Data.coordinates[step]):
                             if len(atom_name_2) == 2:
 
-                                if value2[0] == atom_name_2[0] and atom_ID_2 == int(atom_name_2[1]):                                     
+                                if value2[0] == atomic_no(atom_name_2[0]) and atom_ID_2 == int(atom_name_2[1]):                                     
                                     coord_atom_2 = np.array(value2[1:], dtype=np.float_)
                                     _, distance = displacement(coord_atom_1, coord_atom_2)
                                     Host_Secondary_Distances.append([atom_ID, atom_ID_2, distance])
                                     fw.write(f'\n {atom_name_1[0]}: {atom_ID:>3} \t {atom_name_2[0]}: {atom_ID_2:>3} \t Distance: {round(float(distance), 6)} ')
 
                             elif len(atom_name_2) == 1:
-                                if value2[0] == atom_name_2[0]: 
+                                if value2[0] == atomic_no(atom_name_2[0]): 
                                     coord_atom_2 = np.array(value2[1:], dtype=np.float_)
                                     _, distance = displacement(coord_atom_1, coord_atom_2)
                                     Host_Secondary_Distances.append([atom_ID, atom_ID_2, distance])
@@ -384,19 +403,19 @@ def compute_all_distances(atom_name_1,
 
             elif len(atom_name_1) == 1:
                 for atom_ID, value in enumerate(atom_Data.coordinates[step]):
-                    if  value[0] == atom_name_1[0]:
+                    if  value[0] == atomic_no(atom_name_1[0]):
                         coord_atom_1 = np.array(value[1:], dtype=np.float_)
     
                         for atom_ID_2, value2 in enumerate(atom_Data.coordinates[step]):
                             if len(atom_name_2) == 2:
-                                if value2[0] == atom_name_2[0] and atom_ID_2 == int(atom_name_2[1]): 
+                                if value2[0] == atomic_no(atom_name_2[0]) and atom_ID_2 == int(atom_name_2[1]): 
                                     coord_atom_2 = np.array(value2[1:], dtype=np.float_)
                                     _, distance = displacement(coord_atom_1, coord_atom_2)
                                     Host_Secondary_Distances.append([atom_ID, atom_ID_2, distance])
                                     fw.write(f'\n {atom_name_1[0]}: {atom_ID:>3} \t {atom_name_2[0]}: {atom_ID_2:>3} \t Distance: {round(float(distance), 6)} ')
 
                             elif len(atom_name_2) == 1:
-                                if value2[0] == atom_name_2[0]: 
+                                if value2[0] == atomic_no(atom_name_2[0]): 
                                     coord_atom_2 = np.array(value2[1:], dtype=np.float_)
                                     _, distance = displacement(coord_atom_1, coord_atom_2)
                                     Host_Secondary_Distances.append([atom_ID, atom_ID_2, distance])

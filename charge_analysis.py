@@ -1,7 +1,9 @@
-
 from read_trajectory import Trajectory
-
 from inputValues import fileTraj, SKIP, RESOLUTION
+from periodic_boundary_condition import displacement
+import numpy as np
+
+eps = 10e-5
 
 class ChargeAnalysis(Trajectory):
     def __init__(self, filename=fileTraj, skip=SKIP, resolution = RESOLUTION):
@@ -54,15 +56,19 @@ class ChargeAnalysis(Trajectory):
                 Charges = []
                 
                 i = step * (self.number_of_atoms + 2)
-                
-                for value in self.dataCharge[i+2:i+self.number_of_atoms+2]: 
+               
+                index = 0
+                for index, value in enumerate(self.dataCharge[i+2:i+self.number_of_atoms+2]): 
 
                     atomName = str(value.split()[0])
-                    atomX  = float(value.split()[1])
-                    atomY  = float(value.split()[2])
-                    atomZ  = float(value.split()[3])
+                    atomCoord  = np.array(value.split()[1:4], dtype=np.float_)
                     charge = float(value.split()[4])
+
+                    _, Dist = displacement(atomCoord, self.coordinates[step][index][1:])
+                    
+                    if Dist > eps:
+                        raise RuntimeError('There is mismatch of coords between charge and traj file')
                     
                     Charges.append(charge)
             
-                return  Charges
+                return Charges

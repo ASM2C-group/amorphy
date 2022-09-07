@@ -2,7 +2,9 @@ import os, sys, ast
 import numpy as np
 sys.path.append("/home/raghvp01/MD-traj-analysis-code/Structure_Analysis")
 import time, logo, tqdm
+from elemental_data import atomic_no, atomic_symbol
 from basis_reduction import minkowski_reduce
+from numba.typed import List
 from geometric_properties import (
     cellMatrix_to_cellParameter, cellParameter_to_cellMatrix, 
     check_orthorhombic)
@@ -23,12 +25,12 @@ __numba.version__ = '0.55.1'
 #                    [ 0.0000000000,         0.0000000000,        15.7139997482]])
 
 
-A, B, C =  16.23892446618999,  16.23892446618999,  16.2389244661899 # x = 0.0
+#A, B, C =  16.23892446618999,  16.23892446618999,  16.2389244661899 # x = 0.0
 #A, B, C = 19.5662, 19.5662, 19.5662   # x =0.1
 #A, B, C = 19.47335141773691, 19.47335141773691, 19.47335141773691 # x =0.2
 #A, B, C = 19.38359280464976, 19.38359280464976, 19.38359280464976 # x = 0.3
 #A, B, C = 20.069383346824402, 20.069383346824402, 20.069383346824402 # x =0.4
-#A, B, C = 19.9961464967, 19.9961464967, 19.9961464967 # x = 0.5
+A, B, C = 19.9961464967, 19.9961464967, 19.9961464967 # x = 0.5
 
 ALPHA, BETA, GAMMA = 90.0, 90.0, 90.0
 
@@ -44,12 +46,12 @@ minkowski_reduce_cell = minkowski_reduce(LatticeMatrix)
 Directory = os.getcwd()
 if Directory[-1] != '/': Directory = Directory + '/'
 fileCharge = os.path.join(Directory + 'DDEC6_even_tempered_net_atomic_charges.xyz')
-fileTraj = os.path.join(Directory + 'symmetry.xyz')
+fileTraj = os.path.join(Directory + '../TeO2-HOMO_centers.xyz')
 ##############################################
 
-atom_name_1 = 'Te'  # Host atom symbol
-atom_name_2 = 'O'   # Wannier center symbol
-atom_name_3 = 'O'   # Secondary atatom_name_1
+atom_name_1 = 'O'  # Host atom symbol
+atom_name_2 = 'Xe'   # Wannier center symbol
+atom_name_3 = 'Te'   # Secondary atom_name
 
 ##############################################
 ##############################################
@@ -164,18 +166,30 @@ if __name__ == "__main__":
         tok = time.perf_counter()
         print(f'\nTime elapsed : {tok-tik} seconds  ({(tok-tik)/60}) minutes.')
 
-    def compute_coordination_number(atom1, atom2, rcut, step=False):
+    def compute_coordination_number(atom1, atom2, rcut, step=0):
         from topology import compute_coordination
+        from read_trajectory import Trajectory
 
         tik = time.perf_counter()
-        l_fold, n_coordination = compute_coordination(atom_1=atom1, atom_2=atom2, rcut=rcut, step=step)
+        atom_Data = Trajectory(filename=fileTraj)
+        coordinates = atom_Data.coordinates[step]
+
+        if isinstance(atom2, list):
+            numba_list_atom2 = List()
+            [numba_list_atom2.append(x) for x in atom2]
+        else:
+            numba_list_atom2 = atom2
+
+        l_fold, n_coordination = compute_coordination(coordinates=coordinates, atom_1=atomic_no(atom1), atom_2=numba_list_atom2, rcut=rcut)
+
         #print(n_coordination)
         #for i in coordination:
         #    print('Constrained Frames  :', i)
         tok = time.perf_counter()
+        #print("l_fold in percentage: ", l_fold, " coordination: ",  n_coordination)
         #print(f'\nTime elapsed : {tok-tik} seconds  ({(tok-tik)/60}) minutes.')
 
-        return n_coordination
+        return l_fold, n_coordination
 
     def get_frameID_with_constraint(rcut_12, rcut_23, rcut_13, rcut_11, rcut_22, rcut_33):
         from topology import get_constrained_frameID
@@ -202,8 +216,8 @@ if __name__ == "__main__":
         tik = time.perf_counter()
         TeO2 = WannierAnalysis()
         average_coordination, max_dist, angle, wannier_dist_ener = \
-        TeO2.compute_neighbour_wannier(compute_qnm_statistics=True, print_BO_NBO=True, 
-                                       chargeAnalysis=False, method='DDEC6', 
+        TeO2.compute_neighbour_wannier(compute_qnm_statistics=False, print_BO_NBO=False, 
+                                       chargeAnalysis=True, method='DDEC6', 
                                        write_output=True, 
                                        print_output=False, 
                                        plot_wannier_dist=False,
@@ -259,7 +273,7 @@ if __name__ == "__main__":
         tik = time.perf_counter()
         TeO2 = WannierAnalysis()
         wannier_dist_ener = \
-        TeO2.compute_neighbour_wannier_host_anion(chargeAnalysis=False, method='DDEC6',\
+        TeO2.compute_neighbour_wannier_host_anion(chargeAnalysis=True, method='DDEC6',\
                                                 write_output=True, print_output=False, \
                                                 plot_wannier_dist=False)
         
@@ -302,64 +316,84 @@ if __name__ == "__main__":
             NBO_X[NBO_step[i]].append(NBO_ID[i])
 
         with open(f'{atom_name_1}-BO-NBO-Coordination.dat', 'w') as file_BO_NBO:
-            file_BO_NBO.write('# Rcut(Ang)    n_BO     n_NBO \n')
+            file_BO_NBO.write(f'# Rcut(Ang)    n_BO     n_NBO   {" "*10}  n_BO_lfold (in percentage, values starts from 0 fold) {" "*10}  n_NBO_lfold  (in percentage, values starts from 0 fold) \n')
             
-            for cut in tqdm.tqdm(np.arange(2.2,3.8,0.05)):
+            for cut in tqdm.tqdm(np.arange(3.26, 3.33, 0.05)):
                 coord_BO = 0
+                total_lfold_BO = np.zeros(12)
                 for index, id_list in enumerate(BO_X):
-                    coordination = compute_coordination_number(atom1='Tl', atom2=id_list, rcut=cut, step=index)
+                    l_fold_BO, coordination = compute_coordination_number(atom1=atom_name_1, atom2=id_list, rcut=cut, step=index)
                     coord_BO += coordination
+                    total_lfold_BO += l_fold_BO
                 
+
+                total_lfold_NBO = np.zeros(12)
                 coord_NBO = 0
                 for index, id_list in enumerate(NBO_X):
-                    coordination = compute_coordination_number(atom1='Tl', atom2=id_list, rcut=cut, step=index)
+                    l_fold_NBO, coordination = compute_coordination_number(atom1=atom_name_1, atom2=id_list, rcut=cut, step=index)
                     coord_NBO += coordination
+                    total_lfold_NBO += l_fold_NBO
 
-                file_BO_NBO.write(f'{round(cut,2)}  {round(coord_BO/len(np.unique(BO_step)) , 4)}     {round( coord_NBO/len(np.unique(NBO_step)) , 4)} \n')
+                n_coord_BO = round(coord_BO/len(np.unique(BO_step)) , 4)
+                n_coord_NBO = round( coord_NBO/len(np.unique(NBO_step)) , 4)
+                total_lfold_BO = list(np.asarray(total_lfold_BO, dtype=np.float16) / len(np.unique(BO_step)))
+                total_lfold_NBO = list(np.asarray(total_lfold_NBO, dtype=np.float16) / len(np.unique(BO_step)))
 
-    def ground_center_molecule(ID0, ID1, ID2):
+                file_BO_NBO.write(f'{round(cut,2):>8}  {n_coord_BO:>8}    {n_coord_NBO:>8}  {total_lfold_BO}  {total_lfold_NBO} \n')
+
+    def ground_center_molecule(ID0, ID1, ID2, step=0):
         '''ID1 is the center atom to be ground first.
         '''
         from topology import ground_the_molecule
-
-        coord = ground_the_molecule(ID0=ID0, ID1=ID1, ID2=ID2)
+        from read_trajectory import Trajectory
+        atom_Data = Trajectory(filename=fileTraj)
+        coordinates = atom_Data.coordinates[step]
+        
+        coord = ground_the_molecule(coordinates=coordinates, ID0=ID0, ID1=ID1, ID2=ID2)
         print(len(coord))
         print("Lattice: ",A, B, C)
         for i in coord:
-            print(*i)
+            print(f'{atomic_symbol(i[0]):>2}  {round(i[1], 6):>8}  {round(i[2], 6):>8}  {round(i[3], 6):>8}')
     
-    def wrap_atom():
+    def wrap_atom(step=0):
 
         from topology import wrap_atoms
-        coord = wrap_atoms(cell=LatticeMatrix)
+        from read_trajectory import Trajectory
+        atom_Data = Trajectory(filename=fileTraj)
+        coordinates = atom_Data.coordinates[step]
 
+        coord = wrap_atoms(coordinates=coordinates, cell=LatticeMatrix)
         print(len(coord))
         print("Lattice: ",A, B, C)
         for i in coord:
-            print(*i)
+            print(f'{atomic_symbol(i[0]):>2}  {round(i[1], 6):>8}  {round(i[2], 6):>8}  {round(i[3], 6):>8}')
 
-    def hydrogen_passivation():
+    def hydrogen_passivation(step=0):
        
-       from topology import hydrogen_passivate
+        from topology import hydrogen_passivate
+        from read_trajectory import Trajectory
+        atom_Data = Trajectory(filename=fileTraj)
+        coordinates = atom_Data.coordinates[step]
+        
+        coordinate, hydrogen_coordinate = hydrogen_passivate(coordinates=coordinates, cutoff=2.4)
+        coordinates = np.concatenate((coordinate, hydrogen_coordinate), axis=0)
 
-       coordinate, hydrogen_coordinate = hydrogen_passivate(cutoff=2.4)
-       coordinates = np.concatenate((coordinate, hydrogen_coordinate), axis=0)
-
-       print(len(coordinates))
-       print("Lattice: ", A, B, C)
-       for i in coordinates:
-           print(*i)
+        print(len(coordinates))
+        print("Lattice: ", A, B, C)
+        for i in coordinates:
+             print(f'{atomic_symbol(i[0]):>2}  {round(float(i[1]), 6):>8}  {round(float(i[2]), 6):>8}  {round(float(i[3]), 6):>8}')
 
 
     #######################################################################################################################
-    hydrogen_passivation()
+    # hydrogen_passivation()
     # wrap_atom()
     # ground_center_molecule(ID0=0, ID1=1, ID2=2)
     # get_frameID_with_constraint(rcut_12=1.0,rcut_23=2.2, rcut_13=1.0, rcut_11=3.0, rcut_22=1.0, rcut_33=2.2)
-    # compute_all_distances(atom_name1=f'Tl', atom_name2=f'O@oxyg', minmax=True, step=stp)
+    # compute_coordination_number(atom1='Tl', atom2=oxyg, rcut=2.8,  step=0)
+    # compute_all_distances(atom_name1=f'Tl', atom_name2=f'O@oxyg', minmax=True, step=0)
     # BO_NBO_Coordination(atom_name_1='Tl')
     # rdf(Histogram=True, binwidth=0.005, write=True)
     # bdf(write=True)
     # writetraj(cutoff=1.2)
     # wannier_cation_host(write_dist_wannier=False, rcutoff_coordination=False, plot_wannier_cation_anion_angle=False, plot_histogram2D=False, plot_histogram_method='snsplot')
-    # wannier_anion_host(write_dist_wannier=False, plot_histogram2D=False, plot_histogram_method='snsplot')
+    wannier_anion_host(write_dist_wannier=False, plot_histogram2D=False, plot_histogram_method='snsplot')

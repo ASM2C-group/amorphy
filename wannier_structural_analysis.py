@@ -6,12 +6,17 @@ from periodic_boundary_condition import displacement, angle
 from bond_asymmetry import BondAsymmetry
 from charge_analysis import ChargeAnalysis
 from matplotlib import pyplot as plt
+from elemental_data import atomic_no, atomic_symbol
 import matplotlib_style
 from inputValues import (atom_name_2, atom_name_1, atom_name_3, rcut_Te_O, rcut_Tl_O, 
                         rcut_tolerance_distance_selection, rcut_HostAtom_Wannier, 
                         fileTraj, SKIP, RESOLUTION, AnlgeCut_HostWannier_Host_SecondaryAtom, 
                         fileCharge, rcut_HostAtom_SecondaryAtom, Directory)
 from topology import compute_coordination
+
+atom_name_1 = atomic_no(atom_name_1)
+atom_name_2 = atomic_no(atom_name_2)
+atom_name_3 = atomic_no(atom_name_3)
 
 class WannierAnalysis(Trajectory):
     def __init__(self, filename=fileTraj, skip=SKIP, resolution = RESOLUTION):
@@ -24,16 +29,16 @@ class WannierAnalysis(Trajectory):
 
             if (atom1_other[1:] != coord_atom1).any():
 
-                if atom1_other[0] == 'Te' : #or atom1_other[0] == 'Tl':   # atom_name_1 ( for Te - O - Te)
+                if atom1_other[0] == atomic_no('Te') : #or atom1_other[0] == 'Tl':   # atom_name_1 ( for Te - O - Te)
 
                     coord_other_cation = np.array(atom1_other[1:], dtype=np.float_)
 
                     _, dist_other_12 = displacement(coord_other_cation, coord_atom2) 
 
-                    if atom1_other[0] == 'Te':
+                    if atom1_other[0] == atomic_no('Te'):
                         #rcut_HostAtom_SecondaryAtom = rcut_Te_O
                         pass
-                    elif atom1_other[0] == 'Tl':
+                    elif atom1_other[0] == atomic_no('Tl'):
                         raise TypeError ('Tl forms ionic bond, this method does not work here')
                         #rcut_HostAtom_SecondaryAtom = rcut_Tl_O
 
@@ -132,7 +137,7 @@ class WannierAnalysis(Trajectory):
                         #if atom_name_1 == 'Tl' and count_number_of_wanniers_near_host == 5 :
                         #    print('Tl less than 6 wannier encountered', Atom_ID)
                         #    continue
-                        if atom_name_1 == 'Te' and count_number_of_wanniers_near_host != 1 :
+                        if atom_name_1 == atomic_no('Te') and count_number_of_wanniers_near_host != 1 :
                             print('Te more than 1 wannier encountered')
                             continue
                         
@@ -221,7 +226,7 @@ class WannierAnalysis(Trajectory):
                                         f'Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
                                 
                             if write_output:
-                                fw = open(Directory + atom_name_1 +'-Structure-analysis-result.dat','a')
+                                fw = open(Directory + atomic_symbol(atom_name_1) +'-Structure-analysis-result.dat','a')
                                 if chargeAnalysis:
                                     fw.write(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                             f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID],4):.4f} \t' +
@@ -251,7 +256,7 @@ class WannierAnalysis(Trajectory):
                             total_percentage += percentage
                     if row.any() > 0:
                         print('----------------------------------------')
-                print(f'Total {atom_name_1} counted is {round(total_percentage,2)}%.')
+                print(f'Total {atomic_symbol(atom_name_1)} counted is {round(total_percentage,2)}%.')
                 print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 
             # Printing the coordiantion number of nfold 
@@ -272,7 +277,7 @@ class WannierAnalysis(Trajectory):
             print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
             print()
             average_coordination =  Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)
-            print(f'Total {atom_name_1} counted is {round(Total_Percentage_N_folds, 2)}% and total average coordination number is {average_coordination}.')
+            print(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}% and total average coordination number is {average_coordination}.')
             
             Wannier_Distance_Energy = np.array(wannier_distance_energy, dtype='float')
             Wannier_Distance_Energy = np.atleast_2d(Wannier_Distance_Energy)
@@ -304,7 +309,7 @@ class WannierAnalysis(Trajectory):
                         if row.any() > 0:
                             fw.write('----------------------------------------\n')
                     fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n')
-                    fw.write(f'Total {atom_name_1} counted is {round(total_percentage, 2)}%.\n')
+                    fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {round(total_percentage, 2)}%.\n')
                     
 
                 # Printing the coordiantion number of nfold 
@@ -321,7 +326,7 @@ class WannierAnalysis(Trajectory):
                         Total_Percentage_N_folds += percentage
                         Coordination_host_atom += n_fold * value 
                 fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n \n')
-                fw.write(f'Total {atom_name_1} counted is {round(Total_Percentage_N_folds,2)}% and total average coordination number is {average_coordination}. \n')
+                fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds,2)}% and total average coordination number is {average_coordination}. \n')
                 fw.close()
                 
             return average_coordination, max_dist, angles, Wannier_Distance_Energy
@@ -395,7 +400,7 @@ class WannierAnalysis(Trajectory):
                         
                         #Atom_ID_secondary += 1
                         
-                        if value2[0] == 'Te': #or atom2[0] == 'Tl': # [if atom2[0] == atom_name_3] is not used since secondary atom can be any cation
+                        if value2[0] == atomic_no('Te'): #or atom2[0] == 'Tl': # [if atom2[0] == atom_name_3] is not used since secondary atom can be any cation
                         # if atom2[0] == 'O': # TEST #
                             coord_atom2 = np.array(value2[1:], dtype=np.float_)
                             
@@ -452,7 +457,7 @@ class WannierAnalysis(Trajectory):
                                   f'Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
                         
                     if write_output:
-                        fw = open(Directory +atom_name_1 +'-Structure-analysis-result.dat','a')
+                        fw = open(Directory + atomic_symbol(atom_name_1) +'-Structure-analysis-result.dat','a')
                         if chargeAnalysis:
                             fw.write(f'Step: {step} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t'+
                                      f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Charge: {round(charge[atom_ID],4):.4f}, \t' +
@@ -491,7 +496,7 @@ class WannierAnalysis(Trajectory):
                 Coordination_host_atom += n_fold * value 
         print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         print()
-        print(f'Total {atom_name_1} counted is {Total_Percentage_N_folds}% and total average coordination number is {Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)}.')
+        print(f'Total {atomic_symbol(atom_name_1)} counted is {Total_Percentage_N_folds}% and total average coordination number is {Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)}.')
                                 
         if write_output:
             # Writing data to a file
@@ -509,7 +514,7 @@ class WannierAnalysis(Trajectory):
                     Total_Percentage_N_folds += percentage
                     Coordination_host_atom += n_fold * value 
             fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n \n')
-            fw.write(f'Total {atom_name_1} counted is {Total_Percentage_N_folds}% and total average coordination number is {Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)}. \n')
+            fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {Total_Percentage_N_folds}% and total average coordination number is {Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)}. \n')
             fw.close()
 
         return Wannier_Distance_Energy
@@ -567,13 +572,13 @@ class WannierAnalysis(Trajectory):
             # Thus selecting the one farthest.', end='\r')
             
             if print_degeneracy:
-                if atom_name_1 == 'Tl' and count_number_of_wanniers_near_host < 6:
+                if atom_name_1 == atomic_no('Tl') and count_number_of_wanniers_near_host < 6:
                     for i, value in enumerate(Atom_ID_Wannier_list):
                         print(f'WARNING: DEGENERACY {count_number_of_wanniers_near_host} -- Step: {step} \t ' +
                                 f'Atom-ID: {Atom_ID} \t Atom-ID-Wannier: {value} \t ' +
                                 f'Distance-Atom-Wannier: {round(dist_of_various_wannier_centers_near_host_atom[i], 6)} \t ' +
                                 f'Energy: {self.coordinates_energy[step][value-1][0]}')
-                elif atom_name_1 == 'Te':
+                elif atom_name_1 == atomic_no('Te'):
                     for i, value in enumerate(Atom_ID_Wannier_list):
                         print(f'WARNING: DEGENERACY {count_number_of_wanniers_near_host} -- Step: {step} \t ' +
                                 f'Atom-ID: {Atom_ID} \t Atom-ID-Wannier: {value} \t ' +

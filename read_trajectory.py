@@ -1,4 +1,6 @@
 import numpy as np
+import json
+from elemental_data import atomic_no
 from inputValues import atom_name_2, atom_name_1, atom_name_3
 
 class Trajectory:
@@ -52,7 +54,7 @@ class Trajectory:
             
         # This block removes the X atom in atom_list array to count proper number of atoms for bader analyses but it fails for PDF calculation becuase X is not there   
         try:
-            if atom_name_2 == 'X' :
+            if atom_name_2 == 'Xe' :
                 Total_number_X_atom = self.atom_list.count(atom_name_2)
                 self.number_of_atoms = self.number_of_atoms - Total_number_X_atom
         except ValueError:
@@ -60,8 +62,8 @@ class Trajectory:
             
             
         # Generating n_steps 2D matrices with n_atoms (rows) and 4 columns
-        self.coordinates = np.zeros((self.n_steps, self.n_atoms, 4), dtype = object) 
-        self.coordinates_energy = np.zeros((self.n_steps, self.n_atoms, 1), dtype='float')
+        self.coordinates = np.zeros((self.n_steps, self.n_atoms, 4), dtype=np.float_) 
+        self.coordinates_energy = np.zeros((self.n_steps, self.n_atoms, 1), dtype=np.float_)
 
         # Iterating over each considered configuration after skipping
         for step in range(self.n_steps): 
@@ -72,7 +74,7 @@ class Trajectory:
 
             # Collecting coordinate data in each configuration
             for row, row_values in enumerate(data[i + 2 : i + self.n_atoms + 2]): 
-                coords[row, 0] = row_values.split()[0]
+                coords[row, 0] = atomic_no(row_values.split()[0])
                 coords[row, 1:] = [float(value) for value in row_values.split()[1:4]]
                 
                 # here let's assume, 5th column contains the energy, will mainly useful for 
