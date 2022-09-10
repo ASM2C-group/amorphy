@@ -84,9 +84,8 @@ class WannierAnalysis(Trajectory):
             
             angles = []
             max_dist = []
-            Average_Tl_coordination = np.zeros(12)
-            Tl_coordination_stats = []
-            
+            Coordination = []
+
             if print_BO_NBO:
                 BO = open('BO.dat', 'w')
                 NBO = open('NBO.dat', 'w')
@@ -97,7 +96,11 @@ class WannierAnalysis(Trajectory):
                     with open(fileCharge, 'r') as openFileCharge:
                         self.dataCharge = openFileCharge.readlines()
                 except:
-                    raise f'{fileCharge} does not exist.'   
+                    raise f'{fileCharge} does not exist.' 
+
+            if write_output:
+                fw = open(Directory + atomic_symbol(atom_name_1) +'-Structure-analysis-result.dat','w')
+
                                                 
             for step in tqdm(range(self.n_steps)):
                
@@ -138,7 +141,7 @@ class WannierAnalysis(Trajectory):
                         #    print('Tl less than 6 wannier encountered', Atom_ID)
                         #    continue
                         if atom_name_1 == atomic_no('Te') and count_number_of_wanniers_near_host != 1 :
-                            print('Te more than 1 wannier encountered')
+                            print(f'Te more than 1 wannier encountered in step {step}')
                             continue
                         
                         # Not evaluated directly because sometime I use constraint, so for
@@ -219,26 +222,31 @@ class WannierAnalysis(Trajectory):
                                 if chargeAnalysis:
                                     print(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                         f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID],4):.4f} \t' +
-                                        f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmtery: {BondAsymmetryValue} \t  XYZ: {coord_atom1}')
+                                        f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmetry: {BondAsymmetryValue} \t  XYZ: {coord_atom1}')
                                 else:
                                     print(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                         f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {Atom_ID_secondary_list} \t' +
-                                        f'Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
+                                        f'Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
                                 
                             if write_output:
-                                fw = open(Directory + atomic_symbol(atom_name_1) +'-Structure-analysis-result.dat','a')
                                 if chargeAnalysis:
                                     fw.write(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                             f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID],4):.4f} \t' +
-                                            f'Bonding Atom ID: {Atom_ID_secondary_list} \t Asymmtery: {BondAsymmetryValue} \t  XYZ: {coord_atom1} \n')
+                                            f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmetry: {BondAsymmetryValue} \t  XYZ: {coord_atom1} \n')
                                 else: 
                                     fw.write(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                             f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {Atom_ID_secondary_list} \t'+
-                                            f'Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')        
+                                            f'Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')        
            
 
                 Host_atom_coordination_std.append(Host_atom_coordination_snap)
-            
+                
+                coord_snap = 0
+                for index, values in enumerate(Host_atom_coordination_snap):
+                   coord_snap += index * values
+                
+                coord_snap /= count_number_of_host_atoms
+                Coordination.append(coord_snap)
             Host_atom_coordination_std = np.std(Host_atom_coordination_std, axis=0)
             
             if compute_qnm_statistics:
@@ -256,12 +264,12 @@ class WannierAnalysis(Trajectory):
                             total_percentage += percentage
                     if row.any() > 0:
                         print('----------------------------------------')
-                print(f'Total {atomic_symbol(atom_name_1)} counted is {round(total_percentage,2)}%.')
+                print(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
+                      f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}.')
                 print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 
             # Printing the coordiantion number of nfold 
             Total_Percentage_N_folds = 0
-            Coordination_host_atom = 0
             print()
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
             print('------------------------------------------------')
@@ -273,11 +281,10 @@ class WannierAnalysis(Trajectory):
                     percentage_std = Host_atom_coordination_std[n_fold] * (100/count_number_of_host_atoms)
                     print(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} %')
                     Total_Percentage_N_folds += percentage
-                    Coordination_host_atom += n_fold * value 
+                    #Coordination_host_atom += n_fold * value 
             print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-            print()
-            average_coordination =  Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)
-            print(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}% and total average coordination number is {average_coordination}.')
+            print(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
+                  f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}.')
             
             Wannier_Distance_Energy = np.array(wannier_distance_energy, dtype='float')
             Wannier_Distance_Energy = np.atleast_2d(Wannier_Distance_Energy)
@@ -309,12 +316,12 @@ class WannierAnalysis(Trajectory):
                         if row.any() > 0:
                             fw.write('----------------------------------------\n')
                     fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n')
-                    fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {round(total_percentage, 2)}%.\n')
-                    
+                    fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
+                             f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}. \n')
 
                 # Printing the coordiantion number of nfold 
                 Total_Percentage_N_folds = 0
-                Coordination_host_atom = 0
+                #Coordination_host_atom = 0
                 fw.write('\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n')
                 fw.write('N_fold, count of N_fold, Percentage,  Std. dev.   \n')
                 fw.write('------------------------------------------------\n')
@@ -324,12 +331,13 @@ class WannierAnalysis(Trajectory):
                         percentage_std = Host_atom_coordination_std[n_fold] * (100/count_number_of_host_atoms)
                         fw.write(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} % \n')
                         Total_Percentage_N_folds += percentage
-                        Coordination_host_atom += n_fold * value 
+                        #Coordination_host_atom += n_fold * value 
                 fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n \n')
-                fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds,2)}% and total average coordination number is {average_coordination}. \n')
+                fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
+                         f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}. \n')
                 fw.close()
                 
-            return average_coordination, max_dist, angles, Wannier_Distance_Energy
+            return np.mean(Coordination), max_dist, angles, Wannier_Distance_Energy
 
 
     def compute_neighbour_wannier_host_anion(self, filename="", chargeAnalysis=False, method='DDEC6', 
@@ -342,9 +350,11 @@ class WannierAnalysis(Trajectory):
         is cation.
         atom_name_1 and atom_name_2 refers to host atom and wannier centers
         '''
-        
+       
+        Host_atom_coordination_std = [] # For calculating std for each fold
         Host_atom_coordination = np.zeros(30)
-        
+        Coordination = []
+
         if chargeAnalysis:
             try:
                 with open(fileCharge, 'r') as openFileCharge:
@@ -352,6 +362,9 @@ class WannierAnalysis(Trajectory):
             except:
                 raise f'{fileCharge} does not exist.'  
                 
+        if write_output:
+            fw = open(Directory + atomic_symbol(atom_name_1) +'-Structure-analysis-result.dat','w')
+        
         Wannier_Distance_Energy = []
 
         for step in tqdm(range(self.n_steps)):
@@ -370,6 +383,8 @@ class WannierAnalysis(Trajectory):
             # Counting number of host atoms
             count_number_of_host_atoms = 0
             
+            Host_atom_coordination_snap = np.zeros(30)
+
             for atom_ID, value in enumerate(self.coordinates[step]):
                 
                 if value[0] == atom_name_1:
@@ -450,24 +465,35 @@ class WannierAnalysis(Trajectory):
                         if chargeAnalysis:
                             print(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                   f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Charge: {round(charge[atom_ID],4):.4f} \t' + 
-                                  f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
+                                  f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
                         else: 
                             print(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                   f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Bonding-Atom-ID: {Atom_ID_secondary_list} \t'+
-                                  f'Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
+                                  f'Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
                         
                     if write_output:
-                        fw = open(Directory + atomic_symbol(atom_name_1) +'-Structure-analysis-result.dat','a')
                         if chargeAnalysis:
                             fw.write(f'Step: {step} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t'+
                                      f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Charge: {round(charge[atom_ID],4):.4f}, \t' +
-                                     f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')
+                                     f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')
                         else:
                             fw.write(f'Step: {step} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                      f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Bonding-Atom-ID: {Atom_ID_secondary_list}, \t' +
-                                     f'Asymmtery: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')
+                                     f'Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')
                                  
                     Host_atom_coordination[count_number_of_secondary_atoms] += 1
+                    Host_atom_coordination_snap[count_number_of_secondary_atoms] += 1
+                
+            Host_atom_coordination_std.append(Host_atom_coordination_snap)
+            coord_snap = 0
+            for index, values in enumerate(Host_atom_coordination_snap):
+               coord_snap += index * values
+
+            coord_snap /= count_number_of_host_atoms
+            Coordination.append(coord_snap)
+            
+
+        Host_atom_coordination_std = np.std(Host_atom_coordination_std, axis=0)
 
         Wannier_Distance_Energy = np.array(Wannier_Distance_Energy, dtype='float')
         if plot_wannier_dist:
@@ -482,39 +508,44 @@ class WannierAnalysis(Trajectory):
             
         # Printing the coordiantion number of nfold 
         Total_Percentage_N_folds = 0
-        Coordination_host_atom = 0
+        #Coordination_host_atom = 0
         print()
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-        print('----------------------------------------')
-        print('N_fold, count of N_fold, Percentage')
-        print('----------------------------------------')
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+        print('------------------------------------------------')
+        print('N_fold, count of N_fold, Percentage, Std. dev.')
+        print('------------------------------------------------')
         for n_fold, value in enumerate(Host_atom_coordination):
             if value != 0 :
                 percentage = value/(count_number_of_host_atoms * self.n_steps) * 100
-                print(f'{n_fold}         {value/self.n_steps:>8}    {round(percentage,2):>8}')
+                percentage_std = Host_atom_coordination_std[n_fold] * (100/count_number_of_host_atoms)
+                #print(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} %')
+                print(f'{n_fold}         {value/self.n_steps:>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} %')
+                #print(f'{n_fold}         {value/self.n_steps:>8}    {round(percentage,2):>8}')
                 Total_Percentage_N_folds += percentage
-                Coordination_host_atom += n_fold * value 
-        print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+                #Coordination_host_atom += n_fold * value 
+        print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         print()
-        print(f'Total {atomic_symbol(atom_name_1)} counted is {Total_Percentage_N_folds}% and total average coordination number is {Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)}.')
+        print(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
+              f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}.')
+        #print(f'Total {atomic_symbol(atom_name_1)} counted is {Total_Percentage_N_folds}% and total average coordination number is {Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)}.')
                                 
         if write_output:
-            # Writing data to a file
-            # fw = open(Directory + 'Structure-analysis-result.dat','a')
-            # Printing the coordiantion number of nfold 
             Total_Percentage_N_folds = 0
             Coordination_host_atom = 0
-            fw.write('\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n')
-            fw.write('N_fold, count of N_fold, Percentage\n')
-            fw.write('----------------------------------------\n')
+            fw.write('\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n')
+            fw.write('N_fold, count of N_fold, Percentage,  Std. dev.   \n')
+            fw.write('------------------------------------------------\n')
             for n_fold, value in enumerate(Host_atom_coordination):
                 if value != 0 :
                     percentage = value/(count_number_of_host_atoms * self.n_steps) * 100
-                    fw.write(f'{n_fold}         {value/self.n_steps:>8}     {round(percentage,2):>8}\n')
+                    percentage_std = Host_atom_coordination_std[n_fold] * (100/count_number_of_host_atoms)
+                    fw.write(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} % \n')
                     Total_Percentage_N_folds += percentage
-                    Coordination_host_atom += n_fold * value 
-            fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n \n')
-            fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {Total_Percentage_N_folds}% and total average coordination number is {Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)}. \n')
+                    #Coordination_host_atom += n_fold * value 
+            fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n \n')
+            fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
+                     f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}. \n')
+            #fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {Total_Percentage_N_folds}% and total average coordination number is {Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)}. \n')
             fw.close()
 
         return Wannier_Distance_Energy

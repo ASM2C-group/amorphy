@@ -38,4 +38,4 @@ def BondAsymmetry(coordination, Central_atom, Bonding_atom):
             _, dist_b = displacement(Central_atom, Bonding_atom[k])
             dist_diff += abs(dist_a - dist_b)
     
-    return constant * dist_diff
+    return round(constant * dist_diff, 5)

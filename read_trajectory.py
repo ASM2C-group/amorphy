@@ -54,7 +54,7 @@ class Trajectory:
             
         # This block removes the X atom in atom_list array to count proper number of atoms for bader analyses but it fails for PDF calculation becuase X is not there   
         try:
-            if atom_name_2 == 'Xe' :
+            if atom_name_2 == 'X' :
                 Total_number_X_atom = self.atom_list.count(atom_name_2)
                 self.number_of_atoms = self.number_of_atoms - Total_number_X_atom
         except ValueError:

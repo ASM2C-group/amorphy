@@ -3,7 +3,7 @@ from inputValues import fileTraj, SKIP, RESOLUTION
 from periodic_boundary_condition import displacement
 import numpy as np
 
-eps = 10e-5
+eps = 10e-4
 
 class ChargeAnalysis(Trajectory):
     def __init__(self, filename=fileTraj, skip=SKIP, resolution = RESOLUTION):
