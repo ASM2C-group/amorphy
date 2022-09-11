@@ -222,21 +222,21 @@ class WannierAnalysis(Trajectory):
                                 if chargeAnalysis:
                                     print(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                         f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID],4):.4f} \t' +
-                                        f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmetry: {BondAsymmetryValue} \t  XYZ: {coord_atom1}')
+                                        f'Bonding-Atom-ID: {str(Atom_ID_secondary_list):24} \t Asymmetry: {str(BondAsymmetryValue):8} \t  XYZ: {coord_atom1}')
                                 else:
                                     print(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                        f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {Atom_ID_secondary_list} \t' +
-                                        f'Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
+                                        f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {str(Atom_ID_secondary_list):24} \t' +
+                                        f'Asymmetry: {str(BondAsymmetryValue):8} \t XYZ: {coord_atom1}')
                                 
                             if write_output:
                                 if chargeAnalysis:
                                     fw.write(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                             f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID],4):.4f} \t' +
-                                            f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmetry: {BondAsymmetryValue} \t  XYZ: {coord_atom1} \n')
+                                            f'Bonding-Atom-ID: {str(Atom_ID_secondary_list):24} \t Asymmetry: {str(BondAsymmetryValue):8} \t  XYZ: {coord_atom1} \n')
                                 else: 
                                     fw.write(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                            f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {Atom_ID_secondary_list} \t'+
-                                            f'Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')        
+                                            f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {str(Atom_ID_secondary_list):24} \t'+
+                                            f'Asymmetry: {str(BondAsymmetryValue):8} \t XYZ: {coord_atom1} \n')        
            
 
                 Host_atom_coordination_std.append(Host_atom_coordination_snap)
@@ -465,21 +465,21 @@ class WannierAnalysis(Trajectory):
                         if chargeAnalysis:
                             print(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
                                   f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Charge: {round(charge[atom_ID],4):.4f} \t' + 
-                                  f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
+                                  f'Bonding-Atom-ID: {str(Atom_ID_secondary_list):15} \t Asymmetry: {str(BondAsymmetryValue):8} \t XYZ: {coord_atom1}')
                         else: 
                             print(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                  f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Bonding-Atom-ID: {Atom_ID_secondary_list} \t'+
-                                  f'Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1}')
+                                  f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Bonding-Atom-ID: {str(Atom_ID_secondary_list):15} \t'+
+                                  f'Asymmetry: {str(BondAsymmetryValue):8} \t XYZ: {coord_atom1}')
                         
                     if write_output:
                         if chargeAnalysis:
                             fw.write(f'Step: {step} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t'+
-                                     f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Charge: {round(charge[atom_ID],4):.4f}, \t' +
-                                     f'Bonding-Atom-ID: {Atom_ID_secondary_list} \t Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')
+                                     f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Charge: {round(charge[atom_ID],4):.4f} \t' +
+                                     f'Bonding-Atom-ID: {str(Atom_ID_secondary_list):15} \t Asymmetry: {str(BondAsymmetryValue):8} \t XYZ: {coord_atom1} \n')
                         else:
                             fw.write(f'Step: {step} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                     f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Bonding-Atom-ID: {Atom_ID_secondary_list}, \t' +
-                                     f'Asymmetry: {BondAsymmetryValue} \t XYZ: {coord_atom1} \n')
+                                     f'Number-of-wanniers: {count_number_of_wannier_near_host_atom:2d} \t Bonding-Atom-ID: {str(Atom_ID_secondary_list):15}, \t' +
+                                     f'Asymmetry: {str(BondAsymmetryValue):8} \t XYZ: {coord_atom1} \n')
                                  
                     Host_atom_coordination[count_number_of_secondary_atoms] += 1
                     Host_atom_coordination_snap[count_number_of_secondary_atoms] += 1
@@ -518,9 +518,7 @@ class WannierAnalysis(Trajectory):
             if value != 0 :
                 percentage = value/(count_number_of_host_atoms * self.n_steps) * 100
                 percentage_std = Host_atom_coordination_std[n_fold] * (100/count_number_of_host_atoms)
-                #print(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} %')
-                print(f'{n_fold}         {value/self.n_steps:>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} %')
-                #print(f'{n_fold}         {value/self.n_steps:>8}    {round(percentage,2):>8}')
+                print(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} %')
                 Total_Percentage_N_folds += percentage
                 #Coordination_host_atom += n_fold * value 
         print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
@@ -545,7 +543,6 @@ class WannierAnalysis(Trajectory):
             fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n \n')
             fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
                      f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}. \n')
-            #fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {Total_Percentage_N_folds}% and total average coordination number is {Coordination_host_atom/(count_number_of_host_atoms * self.n_steps)}. \n')
             fw.close()
 
         return Wannier_Distance_Energy
