@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import statsmodels.api as sm
-from statsmodels.nonparametric.kernel_regression import KernelReg
+#import statsmodels.api as sm
+#from statsmodels.nonparametric.kernel_regression import KernelReg
 import matplotlib_style
 
 def smooth_data(r, gr, Gaussian=True, sigmaliss=0.05, RunningAverage=False, 
@@ -66,3 +66,62 @@ def smooth_data(r, gr, Gaussian=True, sigmaliss=0.05, RunningAverage=False,
     #     #     print('# r(ang) gr', file=fileout)
     #     #     for cxx, ccxx in list(zip(lowess[:, 0], lowess[:, 1])):
     #     #         print(cxx,ccxx, file=fileout)
+
+
+def weighted_linear_least_square (x: list,y: list ,weights: list) :
+    ''' This performs the linear regression using weighted_linear_square.
+        Compute the weighted means and weighted deviations from the means.
+        wm denotes a "weighted mean", wm(f) = (sum_i w_i f_i) / (sum_i w_i)
+
+    Paramater:
+    --------------------------------------------------------------------
+    x : Independent variable
+    y : Dependent variable
+    weights : weights of the data (w_i)
+
+    f = \sum_i (w_i ( m' x_i + c')
+
+    Here functions are minimized with weights w_i
+
+
+    IMPORTANT : this function accepts inverse variances, not the 
+                inverse standard deviations as the weights for the 
+                data points.
+
+    Result:
+    --------------------------------------------------------------------
+    c : Intercept of linear fitted line
+    m : Slope of line fitted line
+    cov_ij : Elements of covariance matrix
+    chi2 : weighted sum of residuals
+    '''
+    
+    x = np.asarray(x)
+    y = np.asarray(y)
+    weights = np.asarray(weights)
+
+    W = np.sum(weights)
+
+    wm_x = np.average(x, weights=weights)
+    wm_y = np.average(y, weights=weights)
+
+    dx = x - wm_x
+    dy = y - wm_y
+
+    wm_dx2 = np.average(dx**2,weights=weights)
+    wm_dxdy = np.average(dx*dy,weights=weights)
+
+    # In terms of y = m x + c
+    m = wm_dxdy / wm_dx2
+    c = wm_y - wm_x*m
+
+    cov_00 = (1.0/W) * (1.0 + wm_x**2/wm_dx2)
+    cov_11 = 1.0 / (W*wm_dx2)
+    cov_01 = -wm_x / (W*wm_dx2)
+    
+    # Compute chi^2 = \sum w_i (y_i - (a + b * x_i))^2
+    chi2 = np.sum (weights * (y-(m*x+c))**2)
+
+    
+    return m, c, cov_00, cov_11, cov_01, chi2
+

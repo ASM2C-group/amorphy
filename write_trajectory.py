@@ -2,11 +2,29 @@ import numpy as np
 from read_trajectory import Trajectory
 from periodic_boundary_condition import displacement
 from progress_bar import ShowBar, ProgressBar
-from inputValues import fileTraj, SKIP, RESOLUTION
+from inputValues import fileTraj, SKIP, RESOLUTION, A, B, C
+from elemental_data import atomic_symbol
+from tqdm import tqdm
 
 class WriteTrajectory(Trajectory):
     def __init__(self, filename=fileTraj, skip=SKIP, resolution=RESOLUTION):
         Trajectory.__init__(self, filename=filename, skip=skip, resolution=resolution)
+ 
+
+    def sequencing_trajectory(self):
+        '''Trajectory file written with decreasing atomic number.
+        '''
+        
+        outputfile = '.'.join(fileTraj.split('.')[:-1])+'_sequence_traj.xyz'
+        with open(outputfile, 'w') as fw:
+            for step in tqdm(range(self.n_steps)):
+                coordinates = np.copy(self.coordinates[step])
+                coordinates = coordinates[coordinates[:,0].argsort()]
+                fw.write(f' {len(coordinates)} \n  {A}  {B}  {C} \n')
+                for value in coordinates[::-1]:
+                    fw.write(f' {atomic_symbol(value[0]):>2}    {value[1]:>8.6f}    {value[2]:>8.6f}    {value[3]:>8.6f} \n')
+
+        
 
     def clean_degenerate_wannier_atoms(self, rcut=0.8):
         '''This functions takes a particular atom and search for the farthest wannier

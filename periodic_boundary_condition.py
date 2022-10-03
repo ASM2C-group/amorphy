@@ -2,9 +2,9 @@ import numpy as np
 from inputValues import A, B, C, LatticeMatrix, is_orthorhombic
 from numpy.linalg import norm
 from distance_minkowski_reduction import get_distance, get_angle
-from numba import njit
+from numba import njit, jit
 
-@njit
+@jit
 def displacement(a, b):
 
     if not is_orthorhombic:

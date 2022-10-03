@@ -5,13 +5,38 @@ from geometric_properties import rotate
 from distance_minkowski_reduction import wrap_positions
 from periodic_boundary_condition import displacement, angle
 from tqdm import  tqdm
-from elemental_data import atomic_no
-from  numba import njit
+from elemental_data import atomic_no, atomic_symbol
+from  numba import jit
 from numba.typed import List
 
 eps = 10e-5
+MAX_BONDS = 12 # I assume no atom has more than 12 bonds.
 
-def translate(i, j, k):
+def neighbor_list(coordinates, atomic_species, rcut: float):
+    '''
+      
+    '''
+    # 1. List 
+    neighbor_ID = [[] for x in range(500)]
+    
+    if isinstance(atomic_species, str):
+        atomic_species = atomic_no(atomic_species)
+    
+    for atom_ID, value in enumerate(coordinates):
+        if value[0] == atomic_species:
+            
+            for atom_ID2, value2 in enumerate(coordinates):
+                if value2[0] != float(0): # Not counting X (wannier) 
+                    
+                    _, distance = displacement(value[1:], value2[1:])
+                    if distance <= rcut and distance > eps:
+                        neighbor_ID[atom_ID].append(atom_ID2)
+    
+    return neighbor_ID
+
+
+
+def translate(i: float, j: float, k: float):
     '''Provide the i, j and k units to shift the atoms in respected 
        directions.
 
@@ -233,7 +258,7 @@ def get_constrained_frameID(atom_name_1, atom_name_2, atom_name_3,
 
     return constrained_frames
 
-@njit
+@jit
 def compute_coordination(coordinates, atom_1, atom_2, rcut):
 
     ''' Compute the coordination number of atom_1 with respect to atom_2 within 
@@ -263,222 +288,212 @@ def compute_coordination(coordinates, atom_1, atom_2, rcut):
     '''
 
 
-    #assert isinstance(atom_1, str)
-    #atom_Data = Trajectory(filename=fileTraj)
-    #coordinates = atom_Data.coordinates[step]
-
-
-    MAX_BONDS = 12 # I assume no atom has more than 12 bonds.
     l_fold = np.zeros(MAX_BONDS)
+ 
 
     count_of_atom1 = 0
-    
     if isinstance(atom_2, List):
-        #atom_2 = np.array(atom_2, dtype=np.int_)
         for atom_ID, value in enumerate(coordinates):
             
              if value[0] == atom_1:
-                #coord_atom_1 = np.array(value[1:], dtype=np.float_)
                 count_of_atom1 += 1
 
                 coordination = 0
                 for atom_ID_second, value2 in enumerate(coordinates):
-                    
                     if atom_ID_second in atom_2:
-                        #coord_atom_2 = np.array(value2[1:], dtype=np.float_)
 
                         _, distance = displacement(value2[1:], value[1:])
-
                         if distance < rcut:
+                            #print(distance)
                             coordination += 1
 
                 l_fold[coordination] += 1 
                 #print(step, " ", value[0], " ", atom_ID, " ", coordination , " ", coord_atom_1)
 
-    elif isinstance(atom_2, str):
+    elif isinstance(float(atom_2), float):
         for atom_ID, value in enumerate(coordinates):
-            
             if value[0] == atom_1:
-                coord_atom_1 = np.array(value[1:], dtype=np.float_)
                 count_of_atom1 += 1
 
                 coordination = 0
                 for atom_ID_second, value2 in enumerate(coordinates):
-                    
                     if value2[0] == atom_2:
-                        coord_atom_2 = np.array(value2[1:], dtype=np.float_)
 
-                        _, distance = displacement(coord_atom_1, coord_atom_2)
-                        
+                        _, distance = displacement(value2[1:], value[1:])
                         if distance < rcut:
                             coordination += 1
-
                 l_fold[coordination] += 1 
-
     #else:
     #    raise SomeException(f'Type of atom_2: ({atom_2}) is not compatible with the funciton.')
-
-    
     n_coordination = 0
     for fold, value in enumerate(l_fold):
         n_coordination += fold * value  
-
     n_coordination = n_coordination / count_of_atom1
-
     l_fold = 100 * l_fold / count_of_atom1   # percentage
 
     return l_fold, n_coordination
 
-def compute_all_distances(atom_name_1,
-                          atom_name_2,
-                          minmax_stats=False,
-                          step_Constrained=False):
+def compute_all_distances(coordinates,
+                          atom1,
+                          atom2,
+                          minmax_stats=False):
 
     ''' This function computes the distances between all the atom 1 and among all 
         the atoms of type 2.
 
         Parameters:
         -------------------------------------------------------------------------
-        atom_name_1 : Symbol of Host atom 
-                      If the symbol of the system is followed by @ symbol
-                      then atom_ID is expected.
-        atom_name_2 : Symbol of Host atom 
-                      If the symbol of the system is followed by @ symbol
-                      then atom_ID is expected.
+        coordinates : x,y & z configuration coordinates
+        atom1 : Atom no. or list of of centerd atoms 
+        atom2 : Atomic no. or list of search for atoms  
         minmax_stats: Prints the Atom ID of host and secondary with minimum
                       distance and maximum distance.
-
         Return:
         -------------------------------------------------------------------------
         null
     '''
 
-    atom_name_1 = atom_name_1.split('@')
-    atom_name_2 = atom_name_2.split('@')
+    fname = Directory + 'distances.dat'
 
-    fname = Directory+atom_name_1[0]+'-'+atom_name_2[0]+'-distances.dat'
     with open(fname, 'a') as fw:
-        atom_Data = Trajectory(filename=fileTraj)
-        #fw.write(f'\n # Host-ID Neighbour-ID {atom_name_1}-{atom_name_2}-distances')
-
+        
         Host_Secondary_Distances = []
 
-        for step in range(atom_Data.n_steps):
+        if isinstance(atom1, list):
 
-            #progressBar = "\rProgress: " + ProgressBar(atom_Data.n_steps -1 , step, 100)
-            #ShowBar(progressBar)
+            for atom_ID, value in enumerate(coordinates):
+                if atom_ID in atom1:
+                    for atom_ID2, value2 in enumerate(coordinates):
+                        if isinstance(atom2, list) and atom_ID2 in atom2:
+                                _, distance = displacement(value[1:], value2[1:])
+                                if distance > 0:
+                                    Host_Secondary_Distances.append([atom_ID, atom_ID2, distance])
+                                    fw.write(f'\n {atomic_symbol(value[0])}: {atom_ID:>3} \t {atomic_symbol(value2[0])}: {atom_ID2:>3} \t Distance: {distance:5f} ')
+                        elif not isinstance(atom2, list) and atom2 == atom_ID2:
+                                _, distance = displacement(value[1:], value[2:])
+                                if distance > 0:
+                                    Host_Secondary_Distances.append([atom_ID, atom_ID2, distance])
+                                    fw.write(f'\n {atomic_symbol(value[0])}: {atom_ID:>3} \t {atomic_symbol(value2[0])}: {atom_ID2:>3} \t Distance: {distance:6} ')
+
+            Host_Secondary_Distances = np.array(Host_Secondary_Distances)
+
+            if minmax_stats:
+                minimum_dist = Host_Secondary_Distances[np.argmin(Host_Secondary_Distances[:,2])]
+                maximum_dist = Host_Secondary_Distances[np.argmax(Host_Secondary_Distances[:,2])]
+                #fw.write(f'\nMin-dist ({atom_name_1[0]} {int(minimum_dist[0])} - {atom_name_2[0]} {int(minimum_dist[1])}): {minimum_dist[2]} \t'+
+                #         f'Max-dist ({atom_name_1[0]} {int(maximum_dist[0])} - {atom_name_2[0]} {int(maximum_dist[1])}): {maximum_dist[2]}')
+
+        elif not isinstance(atom1, list):
+            for atom_ID, value in enumerate(coordinates):
+                if atom_ID == atom1: 
+                    for atom_ID2, value2 in enumerate(coordinates):
+                        if isinstance(atom2, list) and atom_ID2 in atom2:
+                                _, distance = displacement(value[1:], value2[1:])
+                                if distance > 0:
+                                    Host_Secondary_Distances.append([atom_ID, atom_ID2, distance])
+                                    fw.write(f'\n {atomic_symbol(value[0])}: {atom_ID:>3} \t {atomic_symbol(value2[0])}: {atom_ID2:>3} \t Distance: {distance:6} ')
+                        elif not isinstance(atom2, list) and atom2 == atom_ID2:
+                                _, distance = displacement(value[1:], value2[1:])
+                                if distance > 0:
+                                    Host_Secondary_Distances.append([atom_ID, atom_ID_2, distance])
+                                    fw.write(f'\n {atomic_symbol(value[0])}: {atom_ID:>3} \t {atomic_symbol(value2[0])}: {atom_ID2:>3} \t Distance: {distance:6} ')
             
-            if isinstance(step_Constrained, int) and step_Constrained != step:
-                continue
+            if minmax_stats:
+                Host_Secondary_Distances = np.array(Host_Secondary_Distances, dtype=np.float_)
+                minimum_dist = Host_Secondary_Distances[np.argmin(Host_Secondary_Distances[:,2])]
+                maximum_dist = Host_Secondary_Distances[np.argmax(Host_Secondary_Distances[:,2])]
+                #fw.write(f'\nMin-dist ({atom_name_1[0]} {int(minimum_dist[0])} - {atom_name_2[0]} {int(minimum_dist[1])}): {minimum_dist[2]} \t'+
+                #         f'Max-dist ({atom_name_1[0]} {int(maximum_dist[0])} - {atom_name_2[0]} {int(maximum_dist[1])}): {maximum_dist[2]}')
 
-            if len(atom_name_1) == 2:
-                 
-                for atom_ID, value in enumerate(atom_Data.coordinates[step]):
-                    if  value[0] == atomic_no(atom_name_1[0]) and atom_ID == int(atom_name_1[1]):
-                        coord_atom_1 = np.array(value[1:], dtype=np.float_)
-    
-                        for atom_ID_2, value2 in enumerate(atom_Data.coordinates[step]):
-                            if len(atom_name_2) == 2:
+def count_atoms_in_sphere(coordinates, center, atom_search, rcut):
+    '''
+       Count of {atom_search} in radius {rcut} centered around {center} is returned
 
-                                if value2[0] == atomic_no(atom_name_2[0]) and atom_ID_2 == int(atom_name_2[1]):                                     
-                                    coord_atom_2 = np.array(value2[1:], dtype=np.float_)
-                                    _, distance = displacement(coord_atom_1, coord_atom_2)
-                                    Host_Secondary_Distances.append([atom_ID, atom_ID_2, distance])
-                                    fw.write(f'\n {atom_name_1[0]}: {atom_ID:>3} \t {atom_name_2[0]}: {atom_ID_2:>3} \t Distance: {round(float(distance), 6)} ')
+       Parameter:
+       ----------------------------------------------------
+       coordinates : x,y & z configuration coordinates
+            |______ : type ==> numpy natoms 2D array
 
-                            elif len(atom_name_2) == 1:
-                                if value2[0] == atomic_no(atom_name_2[0]): 
-                                    coord_atom_2 = np.array(value2[1:], dtype=np.float_)
-                                    _, distance = displacement(coord_atom_1, coord_atom_2)
-                                    Host_Secondary_Distances.append([atom_ID, atom_ID_2, distance])
-                                    fw.write(f'\n {atom_name_1[0]}: {atom_ID:>3} \t {atom_name_2[0]}: {atom_ID_2:>3} \t Distance: {round(float(distance), 6)} ')
+       center      : x,y & z coordinate center of sphere
+            |______ : type ==> numpy 1D array
 
-                Host_Secondary_Distances = np.array(Host_Secondary_Distances)
+       atom_search :  Atom number to look for
+            |______ : type ==> float
 
-                if minmax_stats:
-                    minimum_dist = Host_Secondary_Distances[np.argmin(Host_Secondary_Distances[:,2])]
-                    maximum_dist = Host_Secondary_Distances[np.argmax(Host_Secondary_Distances[:,2])]
-                    fw.write(f'\nMin-dist ({atom_name_1[0]} {int(minimum_dist[0])} - {atom_name_2[0]} {int(minimum_dist[1])}): {minimum_dist[2]} \t'+
-                             f'Max-dist ({atom_name_1[0]} {int(maximum_dist[0])} - {atom_name_2[0]} {int(maximum_dist[1])}): {maximum_dist[2]}')
+       rcut        : radius of sphere 
+            |______ : type ==> float
 
-            elif len(atom_name_1) == 1:
-                for atom_ID, value in enumerate(atom_Data.coordinates[step]):
-                    if  value[0] == atomic_no(atom_name_1[0]):
-                        coord_atom_1 = np.array(value[1:], dtype=np.float_)
-    
-                        for atom_ID_2, value2 in enumerate(atom_Data.coordinates[step]):
-                            if len(atom_name_2) == 2:
-                                if value2[0] == atomic_no(atom_name_2[0]) and atom_ID_2 == int(atom_name_2[1]): 
-                                    coord_atom_2 = np.array(value2[1:], dtype=np.float_)
-                                    _, distance = displacement(coord_atom_1, coord_atom_2)
-                                    Host_Secondary_Distances.append([atom_ID, atom_ID_2, distance])
-                                    fw.write(f'\n {atom_name_1[0]}: {atom_ID:>3} \t {atom_name_2[0]}: {atom_ID_2:>3} \t Distance: {round(float(distance), 6)} ')
+       Return:
+       ----------------------------------------------------
+       count_of_atoms : Number of {atom_search} atom found
+            |______ : type ==> float
+    '''
 
-                            elif len(atom_name_2) == 1:
-                                if value2[0] == atomic_no(atom_name_2[0]): 
-                                    coord_atom_2 = np.array(value2[1:], dtype=np.float_)
-                                    _, distance = displacement(coord_atom_1, coord_atom_2)
-                                    Host_Secondary_Distances.append([atom_ID, atom_ID_2, distance])
-                                    fw.write(f'\n {atom_name_1[0]}: {atom_ID:>3} \t {atom_name_2[0]}: {atom_ID_2:>3} \t Distance: {round(float(distance), 6)} ')
+    count = 0
+    ID = []
+    for atom_ID, value in enumerate(coordinates):
+        if value[0] == atom_search:
+            _, dist = displacement(value[1:], center)
+
+            if dist <= rcut:
+                count += 1
+                ID.append(atom_ID)
+    return count, ID
                 
-                if minmax_stats:
-                    Host_Secondary_Distances = np.array(Host_Secondary_Distances, dtype=np.float_)
-                    minimum_dist = Host_Secondary_Distances[np.argmin(Host_Secondary_Distances[:,2])]
-                    maximum_dist = Host_Secondary_Distances[np.argmax(Host_Secondary_Distances[:,2])]
-                    fw.write(f'\nMin-dist ({atom_name_1[0]} {int(minimum_dist[0])} - {atom_name_2[0]} {int(minimum_dist[1])}): {minimum_dist[2]} \t'+
-                             f'Max-dist ({atom_name_1[0]} {int(maximum_dist[0])} - {atom_name_2[0]} {int(maximum_dist[1])}): {maximum_dist[2]}')
 
 
-
-
-def vmd_bond_plugin(atom_ref, atom_search, rcut):
+def compute_BO_NBO_coordination(coordinates,
+                                atom1 : float,
+                                BO_ID : list,
+                                NBO_ID: list,
+                                rcut  : float,
+                                charge = False):
     '''
-       atom
-    '''
+       
+    '''    
+    l_fold_BO_NBO = np.zeros((MAX_BONDS, MAX_BONDS, MAX_BONDS))
+    l_fold = np.zeros(MAX_BONDS)
+    count_of_atom1 = 0
 
-    vmd_func = '''proc remove_long_bonds { max_length } {
-    for { set i 0 } { $i < [ molinfo top get numatoms ] } { incr i } {
-        set bead [ atomselect top "index $i" ]
-        set bonds [ lindex [$bead getbonds] 0 ]
-        if { [ llength bonds ] > 0 } {
-            set bonds_new {}
-            set xyz [ lindex [$bead get {x y z}] 0 ]
-            foreach j $bonds {
-                set bead_to [ atomselect top "index $j" ]
-                set xyz_to [ lindex [$bead_to get {x y z}] 0 ]
-                if { [ vecdist $xyz $xyz_to ] < $max_length } {
-                    lappend bonds_new $j
-                }
-            }
-            $bead setbonds [ list $bonds_new ]
-            }
-        }
-    }
-    '''
-    fname = Directory+atom_ref+'-'+atom_search+'-bond.tcl'
+    if isinstance(atom1, str):
+        atom1 = atomic_no(atom1)
+    
+    atom2 = atomic_no('O')
+    for atom_ID, value in enumerate(coordinates):
+        if value[0] == atom1:
+            count_of_atom1 += 1
 
-    with open(fname, 'w') as fw:
-        
-        atom_Data = Trajectory(filename=fileTraj)
-        
-        Atom_ID = 0
-        for i, value in enumerate(atom_Data.coordinates[0]):
+            coordination = 0
+            coordination_BO = 0
+            coordination_NBO = 0
+            for atom_ID2, value2 in enumerate(coordinates):
+                if value2[0] == atom2:
 
-            if  value[0] == atom_ref:
-                coord_atom_1 = np.array(value[1:], dtype=np.float_)
-                
-                Atom_ID_secondary = 0
-                for j, value2 in enumerate(atom_Data.coordinates[0]):
-   
-                    if value2[0] == atom_search:
-                        coord_atom_2 = np.array(value2[1:], dtype=np.float_)
-   
-                        _, distance = displacement(coord_atom_1, coord_atom_2)
-                        
-                        if distance <= rcut:
-                            fw.write(f'topo addbond {Atom_ID} {Atom_ID_secondary} \n ')
-                    Atom_ID_secondary += 1
-            Atom_ID += 1
-        fw.write('\n')
-        fw.write(vmd_func)
+                    _, distance = displacement(value2[1:], value[1:])
+                    if distance < rcut:
+                        coordination += 1
+                        if atom_ID2 in BO_ID: 
+                            coordination_BO += 1
+                        elif atom_ID2 in NBO_ID: 
+                            coordination_NBO += 1
+                        else:
+                            print(f'Atom ID: {atom_ID2} found neither in BO_ID nor in NBO_ID.')
+                            print(f'Therefore, considering it as NBO.')
+                            coordination_NBO += 1
+            
+            l_fold_BO_NBO[coordination, coordination_BO, coordination_NBO] += 1
+            l_fold[coordination] += 1
+            if charge:
+                print(atom_ID ,coordination, coordination_BO, coordination_NBO, charge[atom_ID])
+    
+    n_coordination = 0
+    for fold, value in enumerate(l_fold):
+        n_coordination += fold * value
+    n_coordination = n_coordination / count_of_atom1
+    l_fold_count = np.copy(l_fold)
+    l_fold_percent = 100 * l_fold / count_of_atom1   # percentage
+    
+    l_fold_BO_NBO = 100 * l_fold_BO_NBO / count_of_atom1   # percentage
+
+    return n_coordination, l_fold_count,  l_fold_percent, l_fold_BO_NBO
 

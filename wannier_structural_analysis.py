@@ -8,11 +8,10 @@ from charge_analysis import ChargeAnalysis
 from matplotlib import pyplot as plt
 from elemental_data import atomic_no, atomic_symbol
 import matplotlib_style
-from inputValues import (atom_name_2, atom_name_1, atom_name_3, rcut_Te_O, rcut_Tl_O, 
+from inputValues import (atom_name_2, atom_name_1, atom_name_3, 
                         rcut_tolerance_distance_selection, rcut_HostAtom_Wannier, 
                         fileTraj, SKIP, RESOLUTION, AnlgeCut_HostWannier_Host_SecondaryAtom, 
                         fileCharge, rcut_HostAtom_SecondaryAtom, Directory)
-from topology import compute_coordination
 
 atom_name_1 = atomic_no(atom_name_1)
 atom_name_2 = atomic_no(atom_name_2)
@@ -55,7 +54,7 @@ class WannierAnalysis(Trajectory):
 
                                     if distance_selection_other_12 < rcut_tolerance_distance_selection and dist_2W_other_12 < dist_1W_other_12:
 
-                                        dist_1W_near_other_cation, coord_wannier_near_other_cation, count_number_of_wanniers_near_other_host, _ = \
+                                        dist_1W_near_other_cation, coord_wannier_near_other_cation, count_number_of_wanniers_near_other_host = \
                                                 self.get_farthest_atom(atom_name_search=atom_name_2, coord_ref=coord_other_cation,
                                                                   rcut=rcut_HostAtom_Wannier, step=step, Atom_ID="")
 
@@ -69,10 +68,10 @@ class WannierAnalysis(Trajectory):
 
         return 0 # Isolated oxygen atom (couldn't find any other cation)
 
-    def compute_neighbour_wannier(self, filename="", compute_qnm_statistics=False, print_BO_NBO=False, 
-                                    chargeAnalysis=False, method='DDEC6',write_output=False, 
-                                    print_output=False, plot_wannier_dist=False,
-                                    print_degeneracy=False):
+    def compute_neighbour_wannier_host_cation(self, filename="", compute_qnm_statistics=False, print_BO_NBO=False, 
+                                              chargeAnalysis=False, method='DDEC6',write_output=False, 
+                                              print_output=False, plot_wannier_dist=False,
+                                              print_degeneracy=False):
         
             ''' 
             Function counts number of wannier centres around host atoms.
@@ -83,12 +82,12 @@ class WannierAnalysis(Trajectory):
             Host_atom_coordination_qnm = np.zeros((30,30))
             
             angles = []
-            max_dist = []
             Coordination = []
 
             if print_BO_NBO:
                 BO = open('BO.dat', 'w')
                 NBO = open('NBO.dat', 'w')
+                print('You have chosen to write BO.dat and NBO.dat, consider disbaling Te ignoring option with different that one wannier (lone pair)')
 
             # For reading charge analysis file
             if chargeAnalysis:
@@ -118,36 +117,28 @@ class WannierAnalysis(Trajectory):
                     charge = ChargeAnalysis.chargeAnalysis(self, self.dataCharge, step, method=method)            
                 
                 # Counting number of host atoms
-                count_number_of_host_atoms = 0
-                Atom_ID_Bonding_Secondary = []
+                count_number_of_host_atoms    =  0
+                Atom_ID_Bonding_Secondary     = []
                 Atom_ID_Non_Bonding_Secondary = []
-                wannier_distance_energy = []
                 
-                for Atom_ID, atom1 in enumerate(self.coordinates[step]):
+                for atom_ID, atom1 in enumerate(self.coordinates[step]):
                     
                     if atom1[0] == atom_name_1:
-                        #count_number_of_host_atoms += 1
                         coord_atom1 = np.array(atom1[1:], dtype=np.float_)
                         
-                        # Atom_ID_secondary = 0 # Secondary Atom ID
                            
-                        dist_atom_wannier_near_host, coord_atom_wannier_near_host, count_number_of_wanniers_near_host,  Wannier_Distance_Energy = \
+                        dist_atom_wannier_near_host, coord_atom_wannier_near_host, count_number_of_wanniers_near_host = \
                             self.get_farthest_atom(atom_name_search=atom_name_2, coord_ref=coord_atom1, 
-                                              rcut=rcut_HostAtom_Wannier, step=step, Atom_ID=Atom_ID,
+                                              rcut=rcut_HostAtom_Wannier, step=step, Atom_ID=atom_ID,
                                               print_degeneracy=print_degeneracy)
                         
-                        wannier_distance_energy.extend(Wannier_Distance_Energy)
-                        #if atom_name_1 == 'Tl' and count_number_of_wanniers_near_host == 5 :
-                        #    print('Tl less than 6 wannier encountered', Atom_ID)
-                        #    continue
                         if atom_name_1 == atomic_no('Te') and count_number_of_wanniers_near_host != 1 :
-                            print(f'Te more than 1 wannier encountered in step {step}')
+                            print(f'WARNING: Te {atom_ID} encountered {count_number_of_wanniers_near_host} WFCs in step {step}')
                             continue
                         
                         # Not evaluated directly because sometime I use constraint, so for
                         # correct normalisation I count for those follow the constraint
                         count_number_of_host_atoms += 1
-                        max_dist.append(dist_atom_wannier_near_host)
                         
                         # Looking for other oxygen atoms within cutoff radius
                         count_number_of_secondary_atoms = 0
@@ -156,46 +147,44 @@ class WannierAnalysis(Trajectory):
                         Atom_ID_secondary_list = []
                         Atom_ID_secondary_coordinates = []
                         
-                        for Atom_ID_secondary, atom2 in enumerate(self.coordinates[step]):
-                            
+                        for atom_ID2, atom2 in enumerate(self.coordinates[step]):
                             if atom2[0] == atom_name_3:
                                 coord_atom2 = np.array(atom2[1:], dtype=np.float_)
                                 
-                                # distance between primary and secondary atoms
                                 _, dist_12 = displacement(coord_atom1,coord_atom2)
-
-                                                            
                                 if dist_12 < rcut_HostAtom_SecondaryAtom: # cutoff for Te/Tl-O
 
-                                    ## Test Block
-                                    #_, dist_wannier_cation = displacement(coord_atom_wannier_near_host, coord_atom2)
-                                    #print(abs(dist_atom_wannier_near_host+dist_wannier_cation-dist_12))    
-                                    #continue
-                                    
+                                    count_of_bonding_wannier = 0
                                     for l, atom_W in enumerate(self.coordinates[step]):
+                                        
                                         if atom_W[0] == atom_name_2:
                                             coord_W = np.array(atom_W[1:], dtype=np.float_)
                                             
-                                            # distance between primary and Wannier
                                             _, dist_1W = displacement(coord_atom1, coord_W)
-                                            # distance between secondary and Wannier
                                             _, dist_2W = displacement(coord_atom2, coord_W)
                                             
-                                            if dist_2W < dist_1W:  # Bonding wannier is close to anion than cation
+                                            if dist_2W < dist_1W and dist_2W < dist_12 and dist_1W < dist_12:  # Bonding wannier is close to anion than cation
                                             
                                                 # Selecting Wannier centers which lies close to Te-O bond.
                                                 dist_selection = abs(dist_12 - dist_1W - dist_2W)
+                                                
+                                                #if dist_2W < 1.0: # Second minima of O-X dist
+                                                #    print(dist_selection)
+                                                #    continue
 
                                                 if dist_selection <= rcut_tolerance_distance_selection: # rcut for dist. tolerance
-                                                
+                                                    count_of_bonding_wannier += 1
+                                                    
+                                                    if count_of_bonding_wannier > 1 and atom_name_1 == atomic_no('Te'):
+                                                        raise RuntimeError (f'WARNING: More than one bonding wannier found between {atomic_symbol(atom1[0])} {atom_ID} and '+\
+                                                        f'{atomic_symbol(atom2[0])} {atom_ID2} with in step {step} with chosen (rcut_tolerance_distance_selection) parameter')
                                                     degree_angle = angle(coord_atom_wannier_near_host, coord_atom1, coord_atom2)
-                                                        
                                                     angles.append(degree_angle)
                                                     
                                                     # This will help in identifying a chemical bond
                                                     if degree_angle >= AnlgeCut_HostWannier_Host_SecondaryAtom:
                                                         count_number_of_secondary_atoms += 1
-                                                        Atom_ID_secondary_list.append(Atom_ID_secondary)
+                                                        Atom_ID_secondary_list.append(atom_ID2)
                                                         Atom_ID_secondary_coordinates.append(coord_atom2)
                                                 
                                                         if compute_qnm_statistics:
@@ -203,13 +192,13 @@ class WannierAnalysis(Trajectory):
                                                             count_number_of_secondary_bonding_atoms += flag_bonding_secondary_atom
                                                             
                                                             if flag_bonding_secondary_atom == 0:
-                                                                Atom_ID_Non_Bonding_Secondary.append(Atom_ID_secondary)
+                                                                Atom_ID_Non_Bonding_Secondary.append(atom_ID2)
                                                                 if print_BO_NBO:
-                                                                    NBO.write(f'Step: {step}  Host-AtomID: {Atom_ID}   NBO-ID: {Atom_ID_secondary} Distance: {dist_12} \n')
+                                                                    NBO.write(f'Step: {step}  Host-AtomID: {atom_ID}   NBO-ID: {atom_ID2} Distance: {dist_12} \n')
                                                             else:
-                                                                Atom_ID_Bonding_Secondary.append(Atom_ID_secondary)
+                                                                Atom_ID_Bonding_Secondary.append(atom_ID2)
                                                                 if print_BO_NBO:
-                                                                    BO.write(f'Step: {step} Host-AtomID: {Atom_ID}  BO-ID: {Atom_ID_secondary}  Distance: {dist_12} \n')
+                                                                    BO.write(f'Step: {step} Host-AtomID: {atom_ID}  BO-ID: {atom_ID2}  Distance: {dist_12} \n')
                 
 
                         Host_atom_coordination[count_number_of_secondary_atoms] += 1
@@ -220,23 +209,23 @@ class WannierAnalysis(Trajectory):
                             BondAsymmetryValue = BondAsymmetry(count_number_of_secondary_atoms, coord_atom1, np.array(Atom_ID_secondary_coordinates))
                             if print_output:
                                 if chargeAnalysis:
-                                    print(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                        f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID],4):.4f} \t' +
-                                        f'Bonding-Atom-ID: {str(Atom_ID_secondary_list):24} \t Asymmetry: {str(BondAsymmetryValue):8} \t  XYZ: {coord_atom1}')
+                                    print(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
+                                          f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[atom_ID],4):.4f} \t' +
+                                          f'Bonding-Atom-ID: {str(Atom_ID_secondary_list):25} \t Asymmetry: {str(BondAsymmetryValue):8} \t  XYZ: {coord_atom1}')
                                 else:
-                                    print(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                        f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {str(Atom_ID_secondary_list):24} \t' +
-                                        f'Asymmetry: {str(BondAsymmetryValue):8} \t XYZ: {coord_atom1}')
+                                    print(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
+                                          f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {str(Atom_ID_secondary_list):25} \t' +
+                                          f'Asymmetry: {str(BondAsymmetryValue):8} \t XYZ: {coord_atom1}')
                                 
                             if write_output:
                                 if chargeAnalysis:
-                                    fw.write(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                            f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[Atom_ID],4):.4f} \t' +
-                                            f'Bonding-Atom-ID: {str(Atom_ID_secondary_list):24} \t Asymmetry: {str(BondAsymmetryValue):8} \t  XYZ: {coord_atom1} \n')
+                                    fw.write(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
+                                             f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Charge: {round(charge[atom_ID],4):.4f} \t' +
+                                             f'Bonding-Atom-ID: {str(Atom_ID_secondary_list):25} \t Asymmetry: {str(BondAsymmetryValue):8} \t  XYZ: {coord_atom1} \n')
                                 else: 
-                                    fw.write(f'Step: {step:3d} \t Atom-ID: {Atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
-                                            f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {str(Atom_ID_secondary_list):24} \t'+
-                                            f'Asymmetry: {str(BondAsymmetryValue):8} \t XYZ: {coord_atom1} \n')        
+                                    fw.write(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
+                                             f'Number-of-Wanniers: {count_number_of_wanniers_near_host} \t Bonding-Atom-ID: {str(Atom_ID_secondary_list):25} \t'+
+                                             f'Asymmetry: {str(BondAsymmetryValue):8} \t XYZ: {coord_atom1} \n')        
            
 
                 Host_atom_coordination_std.append(Host_atom_coordination_snap)
@@ -253,19 +242,18 @@ class WannierAnalysis(Trajectory):
                 print()
                 print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
                 print('----------------------------------------')
-                print('N_fold, Bridging anion, Count, Percentage')
+                print('N_fold, Bridging anion, Count,  Percentage')
                 print('----------------------------------------')
                 total_percentage = 0
                 for i, row in enumerate(Host_atom_coordination_qnm):
                     for j, col in enumerate(row):
                         if col != 0:
                             percentage = col/(count_number_of_host_atoms * self.n_steps) * 100
-                            print(f'{i}        {j}         {round(col/self.n_steps,3):>8}    {round(percentage,2):>8}')
+                            print(f'{i}        {j}         {round(col/self.n_steps,3):>8}    {round(percentage,2):>8}%')
                             total_percentage += percentage
                     if row.any() > 0:
                         print('----------------------------------------')
-                print(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
-                      f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}.')
+                print(f'Total {atomic_symbol(atom_name_1)} counted is {total_percentage:.2f}%')
                 print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
                 
             # Printing the coordiantion number of nfold 
@@ -279,26 +267,13 @@ class WannierAnalysis(Trajectory):
                 if value != 0 :
                     percentage = value/(count_number_of_host_atoms * self.n_steps) * 100
                     percentage_std = Host_atom_coordination_std[n_fold] * (100/count_number_of_host_atoms)
-                    print(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} %')
+                    print(f'{n_fold}         {value/self.n_steps:>8.3f}     {percentage:>8.2f} %   {"± "+str(round(percentage_std, 2)):>8} %')
                     Total_Percentage_N_folds += percentage
                     #Coordination_host_atom += n_fold * value 
             print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
-            print(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
-                  f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}.')
+            print(f'Total {atomic_symbol(atom_name_1)} counted is {Total_Percentage_N_folds:>4.2f} %  '+\
+                  f'and total average coordination number is {np.mean(Coordination):>6.4f} ± {np.std(Coordination):<6.4f}. ')
             
-            Wannier_Distance_Energy = np.array(wannier_distance_energy, dtype='float')
-            Wannier_Distance_Energy = np.atleast_2d(Wannier_Distance_Energy)
-
-            if plot_wannier_dist:
-                plt.figure(figsize=(12,10))
-                plt.hist(Wannier_Distance_Energy[:,0], bins=50)
-                plt.xlabel('Distance', fontsize=15)
-                plt.ylabel('count', fontsize=15)
-                plt.xticks(fontsize=15)
-                plt.yticks(fontsize=15)
-                plt.xlim(0,1)
-                plt.title('Histogram of distances of Wannier centers to the host atom', fontsize=18)
-                plt.show()
 
             if write_output:
                 if compute_qnm_statistics:
@@ -311,13 +286,12 @@ class WannierAnalysis(Trajectory):
                         for j, col in enumerate(row):
                             if col != 0:
                                 percentage = col/(count_number_of_host_atoms * self.n_steps) * 100
-                                fw.write(f'{i}        {j}         {round(col/self.n_steps,2):>8}    {round(percentage,2):>8} \n')
+                                fw.write(f'{i}        {j}         {col/self.n_steps:>8.2f}    {percentage:>8.2f} \n')
                                 total_percentage += percentage
                         if row.any() > 0:
                             fw.write('----------------------------------------\n')
                     fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n')
-                    fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
-                             f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}. \n')
+                    fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {total_percentage:.2f}% \n')
 
                 # Printing the coordiantion number of nfold 
                 Total_Percentage_N_folds = 0
@@ -329,20 +303,21 @@ class WannierAnalysis(Trajectory):
                     if value != 0 :
                         percentage = value/(count_number_of_host_atoms * self.n_steps) * 100
                         percentage_std = Host_atom_coordination_std[n_fold] * (100/count_number_of_host_atoms)
-                        fw.write(f'{n_fold}         {round(value/self.n_steps,3):>8}     {round(percentage,2):>8} %   {"± "+str(round(percentage_std, 2)):>8} % \n')
+                        fw.write(f'{n_fold}         {value/self.n_steps:>8.3f}     {percentage:>8.2f} %   {"± "+str(round(percentage_std, 2)):>8} % \n')
                         Total_Percentage_N_folds += percentage
                         #Coordination_host_atom += n_fold * value 
                 fw.write('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n \n')
-                fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {round(Total_Percentage_N_folds, 2)}%'+\
-                         f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}. \n')
+                fw.write(f'Total {atomic_symbol(atom_name_1)} counted is {Total_Percentage_N_folds:>4.2f} %  '+\
+                         f'and total average coordination number is {np.mean(Coordination):>6.4f} ± {np.std(Coordination):<6.4f}. \n')
                 fw.close()
                 
-            return np.mean(Coordination), max_dist, angles, Wannier_Distance_Energy
+            return np.mean(Coordination)
 
 
-    def compute_neighbour_wannier_host_anion(self, filename="", chargeAnalysis=False, method='DDEC6', 
-                                                write_output=False, print_output=False, plot_wannier_dist=False,
-                                                print_degeneracy=False):
+    def compute_neighbour_wannier_host_anion(self, filename="", 
+                                             chargeAnalysis=False, method='DDEC6', 
+                                             write_output=False, print_output=False,
+                                             print_degeneracy=False):
         
         ''' 
         Function counts number of wannier centres around host atoms.
@@ -365,7 +340,6 @@ class WannierAnalysis(Trajectory):
         if write_output:
             fw = open(Directory + atomic_symbol(atom_name_1) +'-Structure-analysis-result.dat','w')
         
-        Wannier_Distance_Energy = []
 
         for step in tqdm(range(self.n_steps)):
             
@@ -386,8 +360,9 @@ class WannierAnalysis(Trajectory):
             Host_atom_coordination_snap = np.zeros(30)
 
             for atom_ID, value in enumerate(self.coordinates[step]):
-                
                 if value[0] == atom_name_1:
+                    print()
+                    print(charge[atom_ID], end=' ')
                     count_number_of_host_atoms += 1
                     coord_atom1 = np.array(value[1:], dtype=np.float_)
                     
@@ -404,7 +379,6 @@ class WannierAnalysis(Trajectory):
                         if value_W_lp[0] == atom_name_2:
                             coord_wannier_near_host = np.array(value_W_lp[1:], dtype=np.float_)
                             _, dist_1W_near_host = displacement(coord_atom1, coord_wannier_near_host)
-                            Wannier_Distance_Energy.append([dist_1W_near_host, self.coordinates_energy[step][atom_ID_W_lp], atom_ID])
                             
                             if dist_1W_near_host <  rcut_HostAtom_Wannier:
                                 count_number_of_wannier_near_host_atom += 1
@@ -413,20 +387,23 @@ class WannierAnalysis(Trajectory):
                     # Looking for secondary cation atom 
                     for atom_ID2, value2 in enumerate(self.coordinates[step]):
                         
-                        #Atom_ID_secondary += 1
                         
-                        if value2[0] == atomic_no('Te'): #or atom2[0] == 'Tl': # [if atom2[0] == atom_name_3] is not used since secondary atom can be any cation
-                        # if atom2[0] == 'O': # TEST #
+                        if value2[0] == atom_name_3 or value2[0] == atomic_no('Tl'): 
                             coord_atom2 = np.array(value2[1:], dtype=np.float_)
                             
                             # distance between host(primary) atom and secondary cation atom
                             _, dist_12 = displacement(coord_atom2, coord_atom1)
                             
-                            #if atom2[0] == 'Tl':
-                            #    rcut_HostAtom_SecondaryAtom = rcut_Tl_O
-                            #elif atom2[0] == 'Te':
-                            #    rcut_HostAtom_SecondaryAtom = rcut_Te_O
-                            
+                            ################################################################
+                            ##################### Testt Block  ##############################
+                            ################################################################
+                            if value2[0] == atomic_no('Tl') and dist_12 <= 3.26:
+                                print('Tl', end=' ')
+                                continue
+                            ################################################################
+                            #################### End Test Block  ###########################
+                            ################################################################
+
                             if dist_12 < rcut_HostAtom_SecondaryAtom : # cutoff for cation-anion
                             
                                 for atom_ID_wannier, value_wannier in enumerate(self.coordinates[step]):
@@ -445,7 +422,7 @@ class WannierAnalysis(Trajectory):
                                         if distance_selection < rcut_tolerance_distance_selection and dist_1W < dist_2W:
                                                                                         # Counting number of wannier centers near cation atom in cut-off radius
                                             
-                                            dist_2W_near_cation, coord_wannier_near_cation, count_number_of_wanniers_near_cation, Wannier_Distance_Energy = \
+                                            dist_2W_near_cation, coord_wannier_near_cation, count_number_of_wanniers_near_cation = \
                                                   self.get_farthest_atom(atom_name_search=atom_name_2, coord_ref=coord_atom2,
                                                                     rcut=rcut_HostAtom_Wannier, step=step, Atom_ID=atom_ID,
                                                                     print_degeneracy=print_degeneracy)
@@ -457,10 +434,10 @@ class WannierAnalysis(Trajectory):
                                                 count_number_of_secondary_atoms += 1
                                                 Atom_ID_secondary_list.append(atom_ID2)
                                                 Atom_ID_secondary_coordinates.append(coord_atom2)
-                                                
+                                                print('Te', end=' ') 
 
                     #if count_number_of_wanniers_near_cation < 15:
-                    BondAsymmetryValue = BondAsymmetry(count_number_of_secondary_atoms, coord_atom1, Atom_ID_secondary_coordinates)
+                    BondAsymmetryValue = 'None' # BondAsymmetry(count_number_of_secondary_atoms, coord_atom1, Atom_ID_secondary_coordinates)
                     if print_output:
                         if chargeAnalysis:
                             print(f'Step: {step:3d} \t Atom-ID: {atom_ID:3d} \t Coordination: {count_number_of_secondary_atoms} \t' +
@@ -495,17 +472,6 @@ class WannierAnalysis(Trajectory):
 
         Host_atom_coordination_std = np.std(Host_atom_coordination_std, axis=0)
 
-        Wannier_Distance_Energy = np.array(Wannier_Distance_Energy, dtype='float')
-        if plot_wannier_dist:
-            plt.figure(figsize=(12,10))
-            plt.hist(Wannier_Distance_Energy[:,0], bins=50)
-            plt.xlabel('Distance', fontsize=15)
-            plt.ylabel('count', fontsize=15)
-            plt.xticks(fontsize=15)
-            plt.yticks(fontsize=15)
-            plt.xlim(0,1)
-            plt.title('Histogram of distances of Wannier centers to the host atom', fontsize=18)
-            
         # Printing the coordiantion number of nfold 
         Total_Percentage_N_folds = 0
         #Coordination_host_atom = 0
@@ -545,10 +511,16 @@ class WannierAnalysis(Trajectory):
                      f'and total average coordination number is {round(np.mean(Coordination),4)} ± {round(np.std(Coordination), 4)}. \n')
             fw.close()
 
-        return Wannier_Distance_Energy
+        return None
 
 
-    def get_farthest_atom(self, atom_name_search, coord_ref, rcut, step, Atom_ID, print_degeneracy=False):
+    def get_farthest_atom(self, 
+                          atom_name_search, 
+                          coord_ref, 
+                          rcut: float, 
+                          step: int, 
+                          Atom_ID: int, 
+                          print_degeneracy=False):
         '''
             Looks for the atom located farthest from some reference coordinate
 
@@ -568,50 +540,28 @@ class WannierAnalysis(Trajectory):
             count    : Number of such species of atom in rcut region.
 
         '''
-        # Counting number of wannier centers near host atom in cut-off radius
         count_number_of_wanniers_near_host = 0
 
-        # Storing coordinates of all the wannier centers near host atom 
         coord_of_various_wannier_centers_near_host_atom = []
-        dist_of_various_wannier_centers_near_host_atom =  []
-
-        # Atom_ID_secondary = 0 # Secondary Atom ID
+        dist_of_various_wannier_centers_near_host_atom  = []
         Atom_ID_Wannier_list = []
-        Wannier_Distance_Energy = []
+        
         for atom_ID_wannier, atom_wannier in enumerate(self.coordinates[step]):
 
-
             if atom_wannier[0] == atom_name_search:
-                coord_atom_wannier_near_host = np.array(atom_wannier[1:], dtype=np.float_)
-                _, dist_atom_wannier_near_host = displacement(coord_ref, coord_atom_wannier_near_host)
+                _, dist_atom_wannier_near_host = displacement(coord_ref, atom_wannier[1:])
 
-                # I assume no oxygen-wanniers are with in radium 1 Ang of host atom
                 if dist_atom_wannier_near_host < rcut :   # Cutoff for Te-W 
                     count_number_of_wanniers_near_host += 1
-                    coord_of_various_wannier_centers_near_host_atom.append(coord_atom_wannier_near_host)
+                    coord_of_various_wannier_centers_near_host_atom.append(atom_wannier[1:])
                     dist_of_various_wannier_centers_near_host_atom.append(dist_atom_wannier_near_host)
 
-                    Wannier_Distance_Energy.append(\
-                    [dist_atom_wannier_near_host, self.coordinates_energy[step][atom_ID_wannier], Atom_ID])
-
-
         if count_number_of_wanniers_near_host > 1 :
-            # print('WARNING: There are more that one wanniers centers near host atom. \
-            # Thus selecting the one farthest.', end='\r')
-            
             if print_degeneracy:
-                if atom_name_1 == atomic_no('Tl') and count_number_of_wanniers_near_host < 6:
-                    for i, value in enumerate(Atom_ID_Wannier_list):
-                        print(f'WARNING: DEGENERACY {count_number_of_wanniers_near_host} -- Step: {step} \t ' +
-                                f'Atom-ID: {Atom_ID} \t Atom-ID-Wannier: {value} \t ' +
-                                f'Distance-Atom-Wannier: {round(dist_of_various_wannier_centers_near_host_atom[i], 6)} \t ' +
-                                f'Energy: {self.coordinates_energy[step][value-1][0]}')
-                elif atom_name_1 == atomic_no('Te'):
-                    for i, value in enumerate(Atom_ID_Wannier_list):
-                        print(f'WARNING: DEGENERACY {count_number_of_wanniers_near_host} -- Step: {step} \t ' +
-                                f'Atom-ID: {Atom_ID} \t Atom-ID-Wannier: {value} \t ' +
-                                f'Distance-Atom-Wannier: {round(dist_of_various_wannier_centers_near_host_atom[i], 6)} \t ' +
-                                f'Energy: {self.coordinates_energy[step][value-1][0]}')
+                for i, value in enumerate(Atom_ID_Wannier_list):
+                    print(f'WARNING: DEGENERACY {count_number_of_wanniers_near_host} -- Step: {step} \t ' +
+                          f'Atom-ID: {Atom_ID} \t Atom-ID-Wannier: {value} \t ' +
+                          f'Distance-Atom-Wannier: {dist_of_various_wannier_centers_near_host_atom[i]:8.6f}') 
                 #print()
             coord_atom_wannier_near_host = \
             coord_of_various_wannier_centers_near_host_atom[
@@ -621,7 +571,8 @@ class WannierAnalysis(Trajectory):
         elif count_number_of_wanniers_near_host == 1:
             coord_atom_wannier_near_host = coord_of_various_wannier_centers_near_host_atom[0]
             dist_atom_wannier_near_host = dist_of_various_wannier_centers_near_host_atom[0]
-        else: 
-            print(f'WARNING: There are no wanniers center near host atom with Atom ID {Atom_ID} in step {step}.')
+        else:
+            raise RuntimeError(f'WARNING: There are no wanniers center near host atom with Atom ID {Atom_ID} in step {step}. '+ 
+                               f'Check rcut_HostAtom_Wannier/Lattice parameters in inputValues.py')
 
-        return dist_atom_wannier_near_host, coord_atom_wannier_near_host, count_number_of_wanniers_near_host, Wannier_Distance_Energy
+        return dist_atom_wannier_near_host, coord_atom_wannier_near_host, count_number_of_wanniers_near_host

@@ -1,13 +1,16 @@
 from read_trajectory import Trajectory
 from tqdm import tqdm
 from matplotlib import pyplot as plt
+from  smooth_2D_data import smooth_data
 import numpy as np
 import matplotlib_style
 from progress_bar import ShowBar, ProgressBar
 from geometric_properties import volume_sphere
+from elemental_data import atomic_no, atomic_symbol
 from periodic_boundary_condition import displacement, angle
 from inputValues import (fileTraj, SKIP, RESOLUTION, atom_name_2, atom_name_1, atom_name_3, 
                         A, B, C, bond_len_cut_pair12, bond_len_cut_pair23, Directory)
+
 
 
 class PDF(Trajectory):
@@ -99,7 +102,11 @@ class PDF(Trajectory):
             # and later divided by volume of shell at given index.
             self.g_of_r[i] = value * self.compute_volume_per_atom / volumes[i]
 
-    def radial_distribution_histogram(self, atom_name_1, atom_name_2, binwidth):
+    def radial_distribution_histogram(self, atom_name_1, 
+                                            atom_name_2, 
+                                            binwidth , 
+                                            normalized=False,
+                                            smooth_data=False):
         '''
            This function evaluates the histogram of radial distances between pair of atoms.
            Generally, this function becomes useful in the case of calculating atom-wannier 
@@ -111,37 +118,50 @@ class PDF(Trajectory):
            atom_name_1 : Atom name symbol of atom 1
            atom_name_2 : Atom name symbol of atom 2
            binwidth    : Width of bin for histogram
-
+           normalized  : Normalize the data with n_steps and count of atom_name_1
+           smooth_data : Apply gaussian smootheing to 2D data
+           
            Return:
            ------------------------------------------------------------------------------
         '''
-        Distances = []
 
+        if isinstance(atom_name_1, str):
+            atom_name_1 = atomic_no(atom_name_1)
+        if isinstance(atom_name_2, str):
+            atom_name_2 = atomic_no(atom_name_2)
+
+        Distances = []
+        count_atom_name_1 = self.atom_list.count(atomic_symbol(atom_name_1))
+        
         for step in tqdm(range(self.n_steps)):
             
             for atomID_1, value_1 in enumerate(self.coordinates[step]):
                  if atom_name_1 == value_1[0]:
-                     coord_1 = np.array(value_1[1:], dtype=np.float_)
 
                      for atomID_2, value_2 in enumerate(self.coordinates[step]):
                          if atom_name_2 == value_2[0]:
-                             coord_2 = np.array(value_2[1:], dtype=np.float_)
                              
-                             _, dist = displacement(coord_1, coord_2)
+                             _, dist = displacement(value_1[1:], value_2[1:])
                              Distances.append(float(dist))
-        
 
         xmin = min(Distances)
         xmax = max(Distances)
         bins = int((xmax-xmin)/binwidth)
+        
+        with open(Directory+f'{atomic_symbol(atom_name_1)}-{atomic_symbol(atom_name_2)}-disthist.dat', 'w') as fw:
 
-        y, edges = np.histogram(Distances, bins=bins)
-        centers = 0.5*(edges[1:] + edges[:-1])
+            y, edges = np.histogram(Distances, bins=bins)
+            y = y/ self.n_steps
+            centers = 0.5*(edges[1:] + edges[:-1])
+            if smooth_data:
+                centers, y = smooth_data(y, centers)
+            
+            if normalized:
+                y = y / (self.n_steps * count_atom_name_1) 
 
-        y = y/np.max(y)
-
-        for i in range(len(y)):
-            print(centers[i], y[i])
+            fw.write('# Distance   Hist')
+            for i in range(len(y)):
+                fw.write(f'\n  {centers[i]:>8.5f}    {y[i]:>8.5f} ')
 
 
     #################################################################################################################
