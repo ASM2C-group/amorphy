@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 #import statsmodels.api as sm
 #from statsmodels.nonparametric.kernel_regression import KernelReg
-import matplotlib_style
+#import matplotlib_style
 
 def smooth_data(r, gr, Gaussian=True, sigmaliss=0.05, RunningAverage=False, 
                 movingwidth=4, lowess=False, lwidth=0.02, 

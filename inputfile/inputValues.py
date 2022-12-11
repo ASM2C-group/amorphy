@@ -1,7 +1,8 @@
 import os, sys, ast
 import numpy as np
 sys.path.append("/home/raghvp01/MD-traj-analysis-code/Structure_Analysis")
-import time, logo, tqdm
+import time, logo
+from tqdm import tqdm
 from elemental_data import atomic_no, atomic_symbol, get_atomic_IDs
 from basis_reduction import minkowski_reduce
 from decorators import timeit
@@ -75,7 +76,7 @@ fileCharge = os.path.join(Directory + '../DDEC6_even_tempered_net_atomic_charges
 fileTraj = os.path.join(Directory + '../TeO2-HOMO_centers.xyz')
 ##############################################
 
-atom_name_1 = 'Ti'  # Host atom symbol
+atom_name_1 = 'Te'  # Host atom symbol
 atom_name_2 = 'X'   # Wannier center symbol
 atom_name_3 = 'O'   # Secondary atom_name
 
@@ -89,9 +90,9 @@ RESOLUTION = 500
 #    Describing atomic cutoffs parameters    #
 #--------------------------------------------#
 rcut_HostAtom_Wannier = 0.8
-rcut_HostAtom_SecondaryAtom = 2.5
-rcut_tolerance_distance_selection = np.inf
-AnlgeCut_HostWannier_Host_SecondaryAtom = 0.0
+rcut_HostAtom_SecondaryAtom = 2.48
+rcut_tolerance_distance_selection = 0.05
+AnlgeCut_HostWannier_Host_SecondaryAtom = 73.0
 
 #--------------------------------------------#
 #   For Bond anlge distribution function     #
@@ -138,11 +139,15 @@ if __name__ == "__main__":
 
 
     @timeit
-    def writetraj(sequence_traj):
+    def writetraj(sequence_traj, split_BO_NBO):
         from write_trajectory import WriteTrajectory
         Traj = WriteTrajectory()
         if sequence_traj:
             sequencing = Traj.sequencing_trajectory()
+        if split_BO_NBO:
+            if atom_name_1 != 'O' and atom_name_2 != 'Te':
+                raise NameError ('WARNING: Host atom is not Oxygen')
+            Traj.categorize_BO_NBO_atoms()
     
     @timeit
     def get_all_distances(atom_name1, atom_name2, minmax, step=0):
@@ -155,26 +160,35 @@ if __name__ == "__main__":
         compute_all_distances(coordinates, atom1 = atom_name1, atom2=atom_name2, minmax_stats=minmax) 
 
 
-    @timeit
-    def get_coordination_number(coordinates, atom1, atom2, rcut, step=0):
+    #@timeit
+    def get_coordination_number(atom1, atom2, rcut, coordinates=False):
         from topology import compute_coordination
-        #from read_trajectory import Trajectory
-
-        #atom_Data = Trajectory(filename=fileTraj)
-        #coordinates = atom_Data.coordinates[step]
 
         if isinstance(atom2, list):
             numba_list_atom2 = List()
             [numba_list_atom2.append(x) for x in atom2]
         else:
             numba_list_atom2 = atom2
+        
+        if not coordinates.any():
+            # Provide atomic symbol for atom2
+            from read_trajectory import Trajectory
+            atom_Data = Trajectory(filename=fileTraj)
+            l_fold, n_coordination = [], []
+            for step in tqdm(range(atom_Data.n_steps)):
+                coordinates = atom_Data.coordinates[step]
+                fold, coord = compute_coordination(coordinates=coordinates, atom_1=atomic_no(atom1), atom_2=atomic_no(numba_list_atom2), rcut=rcut)
+                l_fold.append(fold)
+                n_coordination.append(coord)
+            
+            print(f'Coordination: {np.mean(n_coordination):>5.3f} ± {np.std(n_coordination):<5.3f} \n')
+            for index, value in enumerate(zip(np.mean(l_fold, axis=0), np.std(l_fold, axis=0))):
+                if value[0] != 0:
+                    print(f'{index:2}-fold      {value[0]:>8.4f} ± {value[1]:<8.4f}%') 
 
-        l_fold, n_coordination = compute_coordination(coordinates=coordinates, atom_1=atomic_no(atom1), atom_2=numba_list_atom2, rcut=rcut)
+        else:
+            l_fold, n_coordination = compute_coordination(coordinates=coordinates, atom_1=atomic_no(atom1), atom_2=numba_list_atom2, rcut=rcut)
 
-        #print(n_coordination)
-        #for i in coordination:
-        #    print('Constrained Frames  :', i)
-        #print("l_fold in percentage: ", l_fold, " coordination: ",  n_coordination)
         return l_fold, n_coordination
 
     @timeit
@@ -186,14 +200,14 @@ if __name__ == "__main__":
             print('Constrained FrameID: ', i)
 
     @timeit
-    def wannier_cation_host(rcutoff_coordination=False):
+    def wannier_cation_host(rcutoff_coordination=False, angles_bdf=False):
         from wannier_structural_analysis import WannierAnalysis
         if atom_name_1 == 'O' :
             raise NameError ('WARNING: Host atom is Oxygen')
 
         TeO2 = WannierAnalysis()
-        average_coordination = TeO2.compute_neighbour_wannier_host_cation(
-                                       compute_qnm_statistics=False, print_BO_NBO=False, 
+        average_coordination, Angles = TeO2.compute_neighbour_wannier_host_cation(
+                                       compute_qnm_statistics=True, print_BO_NBO=False, 
                                        chargeAnalysis=False, method='DDEC6', 
                                        write_output=True, print_output=False, 
                                        print_degeneracy=True)
@@ -206,9 +220,18 @@ if __name__ == "__main__":
             with open('rcut-coordination.dat', 'a') as fileOpen:
                 fileOpen.write(f'  {rcut_off}   {average_coordination}  \n ')
 
+        if angles_bdf:
+            y, edges = np.histogram(Angles, bins=180)
+            y = y / (TeO2.n_steps * TeO2.atom_list.count(atom_name_1))
+            centers = 0.5*(edges[1:] + edges[:-1])
+            with open('Angles_bdf.dat', 'w') as fileOpen:
+                fileOpen.write(f'{Angles in (deg)}  {Intensity}')
+                for index in range(len(centers)):
+                    fileOpen.write(f' {centers[index]:>8.3f}  {y[index]:>8.3f} \n')
 
     @timeit
-    def wannier_anion_host():
+    def wannier_anion_host(print_lfold_fraction=False,
+                           print_BO_NBO_ID=False):
         from wannier_structural_analysis import WannierAnalysis
 
         # Computing Wannier with host atom as anion
@@ -216,8 +239,16 @@ if __name__ == "__main__":
             raise NameError ('WARNING: Host atom is not Oxygen')
 
         TeO2 = WannierAnalysis()
-        TeO2.compute_neighbour_wannier_host_anion(chargeAnalysis=True, method='DDEC6',
-                                                  write_output=False, print_output=False)
+        bonding_cation_fraction = TeO2.compute_neighbour_wannier_host_anion(
+                                                  chargeAnalysis=False, method='DDEC6',
+                                                  write_output=True, print_output=False,
+                                                  print_BO_NBO_ID=print_BO_NBO_ID)[0]
+
+        if print_lfold_fraction:
+            with open('O-fold-fraction.dat', 'w') as fw:
+                for item in bonding_cation_fraction.items():
+                     fw.write(f'{str(item[0]):35}  {item[1]:5.4f} %  \n')
+
 
     @timeit
     def ground_center_molecule(ID0, ID1, ID2, step=0):
@@ -288,10 +319,10 @@ if __name__ == "__main__":
                  TeO2.dataCharge = openFileCharge.readlines()
         
         try:
-            BO_step, BO_ID = np.loadtxt('BO.dat', usecols=(1,5), unpack=True, dtype=int)
-            NBO_step, NBO_ID = np.loadtxt('NBO.dat', usecols=(1,5), unpack=True, dtype=int)
+            BO_step, BO_ID = np.loadtxt('BO.dat', usecols=(1,3), unpack=True, dtype=int)
+            NBO_step, NBO_ID = np.loadtxt('NBO.dat', usecols=(1,3), unpack=True, dtype=int)
         except FileNotFoundError:
-            print('BO.dat and NBO.dat does not exist. Please first run the wannier_cation_host with print_BO_NBO=True')
+            print('BO.dat and NBO.dat does not exist. Please first run the wannier_anion_host with print_BO_NBO_ID=True')
 
         
         BO_info = defaultdict(list)
@@ -326,11 +357,11 @@ if __name__ == "__main__":
                 l_fold.append(lfold)
                 l_fold_BO_NBO.append(l_BO_NBO)
 
-                l_fold_BO, coordination_BO = get_coordination_number(coordinates, atom1=atom_name_1, atom2=ids, rcut=cut)
+                l_fold_BO, coordination_BO = get_coordination_number(atom1=atom_name_1, atom2=ids, rcut=cut, coordinates=coordinates)
                 coord_BO.append(coordination_BO)
                 total_lfold_BO.append(l_fold_BO)
                 
-                l_fold_NBO, coordination_NBO = get_coordination_number(coordinates, atom1=atom_name_1, atom2=nbo_ids, rcut=cut)
+                l_fold_NBO, coordination_NBO = get_coordination_number(atom1=atom_name_1, atom2=nbo_ids, rcut=cut, coordinates=coordinates)
                 coord_NBO.append(coordination_NBO)
                 total_lfold_NBO.append(l_fold_NBO)
 
@@ -375,9 +406,9 @@ if __name__ == "__main__":
     # get_wrapped_atom()
     # ground_center_molecule(ID0=0, ID1=1, ID2=2)
     # get_frameID_with_constraint(rcut_12=1.0,rcut_23=2.2, rcut_13=1.0, rcut_11=3.0, rcut_22=1.0, rcut_33=2.2)
-    # get_coordination_number(atom1='Tl', atom2=oxyg, rcut=2.8,  step=0)
+    # get_coordination_number(atom1='Ti', atom2='O', rcut=2.5)
     # get_rdf(Histogram=True, binwidth=0.005, write=True)
     # get_bdf(write=True)
-    # writetraj(sequence_traj=True)
-    wannier_cation_host(rcutoff_coordination=False)
-    # wannier_anion_host()
+    # writetraj(sequence_traj=False, split_BO_NBO=True)
+    wannier_cation_host(rcutoff_coordination=False, angles_bdf=False)
+    # wannier_anion_host(print_lfold_fraction=False,  print_BO_NBO_ID=False)

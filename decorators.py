@@ -1,5 +1,5 @@
 from functools import wraps
-import time
+import time, sys
 
 
 def timeit(func):
@@ -12,7 +12,7 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = end_time - start_time
         log = f'\nTime elapsed for the execution of Function "{func.__name__}{args} {kwargs}" took {total_time:.4f} seconds. \n'
-        print(log)
+        sys.stderr.write(log)
         system.additional_info(log)
         return result
     return timeit_wrapper
