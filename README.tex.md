@@ -8,7 +8,7 @@ During my PhD tenure, me in collaboration with my supervisor Dr. Assil Bouzid, w
 \\caption{Codes utilized for structural analysis of amorphous system}
 \\end{figure} \\ 
 
-The github link to [_amorphy_] (https://github.com/rvraghvender/amorph)
+The github link to [_amorphy_] (https://github.com/rvraghvender/amorph "amorphy GitHub")
 
 ## {Description of _amorphy_ code
 
@@ -39,9 +39,9 @@ molecule etc.
 - Ground the molecule: Given atomic ID of three atoms, this submodule, translates and rotates the whole molecular fragment in such a way that the given IDs are placed on the z = 0 plane.
 - Compute BO/NBO coordination: This submodule, computes the coordination number of cation with respect to bridging oxygen and non-bridging oxygen separately.
 
-- **wannier_structural_analysis.py:** This module performs the following operations:
-  - Use wannier centers around cation to study its local environment: Here considering cation as a host atom, the local environments such coordination number resolved
+**wannier_structural_analysis.py:** This module performs the following operations:
+- Use wannier centers around cation to study its local environment: Here considering cation as a host atom, the local environments such coordination number resolved
 percentage, average charge, bond asymmetry etc. around cation are obtained under the applied Wannier center constraints. 
-  - Use wannier centers around anion to study its local environment: Here considering anion as a host atom, the local environments such as coordination number resolved percentage, average charge, bond asymmetry etc. around anion are obtained under the applied Wannier center constraints. 
-  - Get BO/NBO ID: In this submodule, the atomic ID of bridging and non-bridging oxygen are returned. 
-\\end{itemize}
+- Use wannier centers around anion to study its local environment: Here considering anion as a host atom, the local environments such as coordination number resolved percentage, average charge, bond asymmetry etc. around anion are obtained under the applied Wannier center constraints. 
+- Get BO/NBO ID: In this submodule, the atomic ID of bridging and non-bridging oxygen are returned. 
+
