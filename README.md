@@ -1,5 +1,17 @@
 # amorphy
-
+```
+     __ _ _ __ ___   ___  _ __ _ __ | |__  _   _ 
+    / _` | '_ ` _ \ / _ \| '__| '_ \| '_ \| | | |
+   | (_| | | | | | | (_) | |  | |_) | | | | |_| |
+    \__,_|_| |_| |_|\___/|_|  | .__/|_| |_|\__, |
+                              |_|          |___/ 	
+	
+    =============================================	
+    =                                           =	
+    =             HAPPY COMPUTING               = 	
+    =                                           =	
+    =============================================
+```
 During my PhD tenure, me in collaboration with my supervisor Dr. Assil Bouzid, we have written a code named _amorphy_. The purpose of this code base is to perform structural analysis for amorphous system. The coordination number, local environment, charge analysis etc. reported in this work have been computed using _amorphy_ code.
 
 ## Working mechanism
@@ -42,3 +54,5 @@ percentage, average charge, bond asymmetry etc. around cation are obtained under
 - Use wannier centers around anion to study its local environment: Here considering anion as a host atom, the local environments such as coordination number resolved percentage, average charge, bond asymmetry etc. around anion are obtained under the applied Wannier center constraints. 
 - Get BO/NBO ID: In this submodule, the atomic ID of bridging and non-bridging oxygen are returned. 
 
+## Code disclaimer
+We would like to address an important matter regarding the functionality of amorphy. As an open-source project, we highly appreciate your involvement and contributions to the development of this software. While we make diligent efforts to review and maintain the quality of the code, it is impossible for us to guarantee the accuracy, completeness, or reliability of every line of code. In the event that you encounter any problems, bugs, or errors while using amorphy, we encourage you to report it my email address [rvraghvender@gmail.com]. However, please understand that we may not be able to provide immediate solutions or fixes. We appreciate your understanding and continued support in making amorphy a vibrant and useful open-source project.
