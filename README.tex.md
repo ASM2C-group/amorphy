@@ -3,12 +3,9 @@
 During my PhD tenure, me in collaboration with my supervisor Dr. Assil Bouzid, we have written a code named _amorphy_. The purpose of this code base is to perform structural analysis for amorphous system. The coordination number, local environment, charge analysis etc. reported in this work have been computed using _amorphy_ code.
 
 
-\\begin{figure}\[!htbp\] \\centering
-\\includegraphics\[scale=0.45\]{chapters/images/appendix/amorphy.png}
-\\caption{Codes utilized for structural analysis of amorphous system}
-\\end{figure} \\ 
+! ([./amorphy.png](https://github.com/rvraghvender/UnilimThesis/blob/master/chapters/images/appendix/amorphy.png))
 
-The github link to [_amorphy_] (https://github.com/rvraghvender/amorph "amorphy GitHub")
+The github link to [amorphy] (https://github.com/rvraghvender/amorph "amorphy GitHub")
 
 ## {Description of _amorphy_ code
 
