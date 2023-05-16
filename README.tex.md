@@ -2,12 +2,12 @@
 
 During my PhD tenure, me in collaboration with my supervisor Dr. Assil Bouzid, we have written a code named _amorphy_. The purpose of this code base is to perform structural analysis for amorphous system. The coordination number, local environment, charge analysis etc. reported in this work have been computed using _amorphy_ code.
 
+## Working mechanism
+![_amorphy_](https://github.com/rvraghvender/UnilimThesis/blob/master/chapters/images/appendix/amorphy.png)
 
-! ([./amorphy.png](https://github.com/rvraghvender/UnilimThesis/blob/master/chapters/images/appendix/amorphy.png))
+The github link to [_amorphy_] (https://github.com/rvraghvender/amorph "amorphy GitHub")
 
-The github link to [amorphy] (https://github.com/rvraghvender/amorph "amorphy GitHub")
-
-## {Description of _amorphy_ code
+## Description of _amorphy_ code
 
 **inputValues.py:** Implements the function for computing desired properties and takes the input parameters such as cut-offs, atomic symbols etc.  
 
