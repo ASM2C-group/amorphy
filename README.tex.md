@@ -51,15 +51,9 @@ are placed on the z = 0 plane. \\item Compute BO/NBO coordination: This
 submodule, computes the coordination number of cation with respect to
 bridging oxygen and non-bridging oxygen separately. \\end{itemize}
 \\item \\textbf{wannier_structural_analysis.py:} This module performs
-the following operations: \\begin{itemize} \\item Use wannier centers
-around cation to study its local environment: Here considering cation as
-a host atom, the local environments such coordination number resolved
-percentage, average charge, bond asymmetry etc. around cation are
-obtained under the applied Wannier center constraints. \\item Use
-wannier centers around anion to study its local environment: Here
-considering anion as a host atom, the local environments such as
-coordination number resolved percentage, average charge, bond asymmetry
-etc. around anion are obtained under the applied Wannier center
-constraints. \\item Get BO/NBO ID: In this submodule, the atomic ID of
-bridging and non-bridging oxygen are returned. \\newline \\end{itemize}
+the following operations:
+- Use wannier centers around cation to study its local environment: Here considering cation as a host atom, the local environments such coordination number resolved
+percentage, average charge, bond asymmetry etc. around cation are obtained under the applied Wannier center constraints. 
+- Use wannier centers around anion to study its local environment: Here considering anion as a host atom, the local environments such as coordination number resolved percentage, average charge, bond asymmetry etc. around anion are obtained under the applied Wannier center constraints. 
+- Get BO/NBO ID: In this submodule, the atomic ID of bridging and non-bridging oxygen are returned. 
 \\end{itemize}
