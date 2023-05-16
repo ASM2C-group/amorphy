@@ -34,26 +34,18 @@ this submodule, partial PDF is calculated between two atomic species.
 \\item Bond-angle distribution function (BAD): In this submodule,
 bond-angle distribution of angle between atoms to and is calculated.
 \\end{itemize} \\item \\textbf{topology.py:} This module performs the
-following operations: \\begin{itemize} \\item Compute coordination: In
-this submodule, the coordination number for given atom under cut-off
-value is calculated. \\item Wrap atoms: This submodule, wraps the atoms
-placed outside the simulation cell into the box using periodic boundary
-conditions. \\item Compute all distances: This submodule, prints all the
-possible distance between two atomic species for each frame. \\item
-Neighbor list: This submodule, returns a list of atomic ID around given
-atom. \\item Get constrained frame ID: This submodule, returns the frame
-ID in which two atoms come closer than the cut-off values defined.
-\\item Hydrogen passivate: This submodule, attaches hydrogen atom to the
-terminal oxygen atoms in a molecular fragment. \\item Ground the
-molecule: Given atomic ID of three atoms, this submodule, translates and
-rotates the whole molecular fragment in such a way that the given IDs
-are placed on the z = 0 plane. \\item Compute BO/NBO coordination: This
-submodule, computes the coordination number of cation with respect to
-bridging oxygen and non-bridging oxygen separately. \\end{itemize}
-\\item \\textbf{wannier_structural_analysis.py:} This module performs
-the following operations:
-- Use wannier centers around cation to study its local environment: Here considering cation as a host atom, the local environments such coordination number resolved
+following operations:
+- Compute coordination: In this submodule, the coordination number for given atom under cut-off value is calculated. 
+- Wrap atoms: This submodule, wraps the atoms placed outside the simulation cell into the box using periodic boundary conditions. 
+- Compute all distances: This submodule, prints all the possible distance between two atomic species for each frame. 
+- Neighbor list: This submodule, returns a list of atomic ID around given atom. 
+- Get constrained frame ID: This submodule, returns the frame ID in which two atoms come closer than the cut-off values defined.
+- Hydrogen passivate: This submodule, attaches hydrogen atom to the terminal oxygen atoms in a molecular fragment. 
+- Ground the molecule: Given atomic ID of three atoms, this submodule, translates and rotates the whole molecular fragment in such a way that the given IDs are placed on the z = 0 plane.
+- Compute BO/NBO coordination: This submodule, computes the coordination number of cation with respect to bridging oxygen and non-bridging oxygen separately.
+- \\textbf{wannier_structural_analysis.py:} This module performs the following operations:
+  - Use wannier centers around cation to study its local environment: Here considering cation as a host atom, the local environments such coordination number resolved
 percentage, average charge, bond asymmetry etc. around cation are obtained under the applied Wannier center constraints. 
-- Use wannier centers around anion to study its local environment: Here considering anion as a host atom, the local environments such as coordination number resolved percentage, average charge, bond asymmetry etc. around anion are obtained under the applied Wannier center constraints. 
-- Get BO/NBO ID: In this submodule, the atomic ID of bridging and non-bridging oxygen are returned. 
+  - Use wannier centers around anion to study its local environment: Here considering anion as a host atom, the local environments such as coordination number resolved percentage, average charge, bond asymmetry etc. around anion are obtained under the applied Wannier center constraints. 
+  - Get BO/NBO ID: In this submodule, the atomic ID of bridging and non-bridging oxygen are returned. 
 \\end{itemize}
