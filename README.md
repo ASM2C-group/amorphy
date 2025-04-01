@@ -17,7 +17,7 @@ During my PhD tenure, me in collaboration with my supervisor Dr. Assil Bouzid, w
 ## Working mechanism
 ![_amorphy_](https://github.com/rvraghvender/UnilimThesis/blob/master/chapters/images/appendix/amorphy.png)
 
-The github link to [_amorphy_] (https://github.com/rvraghvender/amorph "amorphy GitHub")
+The github link to [_amorphy_] (https://github.com/rvraghvender/amorphy "amorphy GitHub")
 
 ## Description of _amorphy_ code
 
