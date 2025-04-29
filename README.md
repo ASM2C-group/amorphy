@@ -12,7 +12,7 @@
     =                                           =	
     =============================================
 ```
-Amorphy was developped during the PhD tenure of Raghvender Raghvender in collaboration with Dr. Assil Bouzid. 
+Amorphy was developped during the PhD thesis of Raghvender Raghvender under the supervision of Dr. Assil Bouzid. 
 The purpose of this code is to perform a various set of structural analysis for amorphous systems (particularly oxides). 
 
 If you use [_amorphy_](https://github.com/ASM2C-group/amorphy "amorphy")
