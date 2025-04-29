@@ -12,9 +12,11 @@
     =                                           =	
     =============================================
 ```
-During my PhD tenure, me in collaboration with my supervisor Dr. Assil Bouzid, we have written a code named _amorphy_. The purpose of this code base is to perform structural analysis for amorphous system. The coordination number, local environment, charge analysis etc. reported in this work have been computed using _amorphy_ code.
+Amorphy was developped during the PhD tenure of Raghvender Raghvender in collaboration with Dr. Assil Bouzid. 
+The purpose of this code is to perform a various set of structural analysis for amorphous systems (particularly oxides). 
 
-If you use amorphy please cite:
+If you use [_amorphy_](https://github.com/rvraghvender/amorphy "amorphy")
+ please cite:
 Structure of amorphous revisited: A hybrid functional ab initio molecular dynamics study.
 
 Raghvender Raghvender, Assil Bouzid, Sylvian Cadars, David Hamani, Philippe Thomas, Olivier Masson.
@@ -26,7 +28,7 @@ https://doi.org/10.1103/PhysRevB.106.174201
 ## Working mechanism
 ![_amorphy_](https://github.com/rvraghvender/UnilimThesis/blob/master/chapters/images/appendix/amorphy.png)
 
-The github link to [_amorphy_] (https://github.com/rvraghvender/amorphy "amorphy GitHub")
+The original github link to [_amorphy_](https://github.com/rvraghvender/amorphy "amorphy GitHub")
 
 ## Description of _amorphy_ code
 
