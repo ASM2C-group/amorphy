@@ -15,7 +15,7 @@
 Amorphy was developped during the PhD tenure of Raghvender Raghvender in collaboration with Dr. Assil Bouzid. 
 The purpose of this code is to perform a various set of structural analysis for amorphous systems (particularly oxides). 
 
-If you use [_amorphy_](https://github.com/rvraghvender/amorphy "amorphy")
+If you use [_amorphy_](https://github.com/ASM2C-group/amorphy "amorphy")
  please cite:
 Structure of amorphous revisited: A hybrid functional ab initio molecular dynamics study.
 
@@ -26,7 +26,7 @@ Phys. Rev. B 106, 174201, 2022.
 https://doi.org/10.1103/PhysRevB.106.174201
 
 ## Working mechanism
-![_amorphy_](https://github.com/rvraghvender/UnilimThesis/blob/master/chapters/images/appendix/amorphy.png)
+![pipeline](amorphy.png)
 
 The original github link to [_amorphy_](https://github.com/rvraghvender/amorphy "amorphy GitHub")
 
