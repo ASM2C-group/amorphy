@@ -15,9 +15,12 @@
 During my PhD tenure, me in collaboration with my supervisor Dr. Assil Bouzid, we have written a code named _amorphy_. The purpose of this code base is to perform structural analysis for amorphous system. The coordination number, local environment, charge analysis etc. reported in this work have been computed using _amorphy_ code.
 
 If you use amorphy please cite:
-Structure of amorphous revisited: A hybrid functional ab initio molecular dynamics study 
-Raghvender Raghvender, Assil Bouzid, Sylvian Cadars, David Hamani, Philippe Thomas, Olivier Masson
-Phys. Rev. B 106, 174201, 2022
+Structure of amorphous revisited: A hybrid functional ab initio molecular dynamics study.
+
+Raghvender Raghvender, Assil Bouzid, Sylvian Cadars, David Hamani, Philippe Thomas, Olivier Masson.
+
+Phys. Rev. B 106, 174201, 2022.
+
 https://doi.org/10.1103/PhysRevB.106.174201
 
 ## Working mechanism
